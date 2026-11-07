@@ -26,6 +26,7 @@ section {
     display: flex;
     height: 11in;
     width: 17.5in;
+    justify-content: center;
 }
 
 .carousel-item {
@@ -34,9 +35,14 @@ section {
     visibility: hidden;
     display: none;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: center;
     position: absolute;
     flex-shrink: 0;
+}
+
+/* Estilo para páginas duplas unidas sem espaço */
+.carousel-item--double {
+    justify-content: center;
 }
 
 article {
@@ -48,12 +54,33 @@ article {
     float: left;
     margin: 0;
     position: relative;
-    -webkit-box-shadow: inset 0px 0px 10px 0px rgba(0, 0, 0, 0.75);
-    -moz-box-shadow: inset 0px 0px 10px 0px rgba(0, 0, 0, 0.75);
-    box-shadow: inset 0px 0px 10px 0px rgba(0, 0, 0, 0.75);
+    
+    /* REMOVIDO O BOX-SHADOW INTERNO QUE CRIAVA A SOMBRA DA LOMBADA */
+    box-shadow: none;
+    
     background-position: center;
     background-repeat: no-repeat;
-    background-size: 100% 100%;
+    
+    /* MUDADO PARA COVER PARA PREENCHER TOTALMENTE O ESPAÇO SEM BORDAS PRETAS */
+    background-size: cover; 
+}
+
+/* Remove qualquer espaçamento entre a página esquerda e a direita */
+.leftPage {
+    margin-right: 0 !important;
+    border-right: none !important;
+}
+
+.rightPage {
+    margin-left: 0 !important;
+    border-left: none !important;
+}
+
+/* Página única centralizada (Capa e Contracapa) */
+.singlePage {
+    width: 8.5in;
+    height: 11in;
+    margin: 0 auto;
 }
 
 .leftPage span.pagenumber {
@@ -66,6 +93,13 @@ article {
 .rightPage span.pagenumber {
     right: 0;
     float: right;
+    border-left: 1px inset rgba(255, 255, 255, 0.25);
+    border-top-left-radius: 0.1875in;
+}
+
+.singlePage span.pagenumber {
+    right: 0;
+    left: auto;
     border-left: 1px inset rgba(255, 255, 255, 0.25);
     border-top-left-radius: 0.1875in;
 }

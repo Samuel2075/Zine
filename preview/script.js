@@ -3,7 +3,7 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-
 
 document.addEventListener("DOMContentLoaded", async function () {
     const urlParams = new URLSearchParams(window.location.search);
-    const zineId = urlParams.get("id"); // Agora buscamos diretamente pelo ID do documento no Firestore
+    const zineId = urlParams.get("id");
 
     const magazineContainer = document.getElementById("magazineContainer");
     const navElement = document.getElementById("pageNav") || document.querySelector('.carousel__nav');
@@ -15,7 +15,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
 
     try {
-        // Busca os dados do zine diretamente no Firestore
         const docRef = doc(db, "zines", zineId);
         const docSnap = await getDoc(docRef);
 
@@ -27,6 +26,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         const zineData = docSnap.data();
         if (titleEl) titleEl.textContent = zineData.nomeZine;
 
+        // Garante que usamos o array de páginas salvo
         const paginas = zineData.paginas || [];
 
         if (paginas.length === 0) {
@@ -37,36 +37,63 @@ document.addEventListener("DOMContentLoaded", async function () {
         const oldItems = magazineContainer.querySelectorAll('.carousel-item');
         oldItems.forEach(item => item.remove());
 
-        // Cria os blocos de páginas duplas com base nos links guardados
-        for (let i = 0; i < paginas.length; i += 2) {
+        let itemIndex = 1;
+        const totalPaginas = paginas.length;
+
+        // 1. PRIMEIRA PÁGINA SOZINHA (Capa - Posição 0 do array)
+        if (totalPaginas > 0) {
+            const urlCapa = paginas[0] || "../assets/imgNotFound.jpg";
+            const singleItemDiv = document.createElement("div");
+            singleItemDiv.className = `carousel-item carousel-item--single ${itemIndex === 1 ? 'active' : ''}`;
+            
+            singleItemDiv.innerHTML = `
+                <article class="singlePage page" style="background-image: url('${urlCapa}');">
+                    <span class="pagenumber">1</span>
+                </article>
+            `;
+            if (navElement) {
+                magazineContainer.insertBefore(singleItemDiv, navElement);
+            } else {
+                magazineContainer.appendChild(singleItemDiv);
+            }
+            itemIndex++;
+        }
+
+        // 2. PÁGINAS INTERMÉDIAS EM DUPLA (Do índice 1 até o penúltimo, se houver)
+        let i = 1;
+        
+        // Determina se a última página deve ficar sozinha (caso o total seja par ou ímpar, dependendo da regra de negócio: se quiser a última sempre sozinha quando for par >= 4 ou ímpar)
+        // Aqui assumimos que se o total for par (ex: 8 páginas), a última (8) fica sozinha, logo as duplas vão até totalPaginas - 1.
+        // Se o total for ímpar, a última também fica sozinha.
+        const limiteDuplas = (totalPaginas % 2 === 0 && totalPaginas > 2) ? totalPaginas - 1 : totalPaginas;
+
+        while (i < limiteDuplas) {
             const pageNumLeft = i + 1;
             const urlLeft = paginas[i] || "../assets/imgNotFound.jpg";
-
+            
             let rightArticleHtml = '';
-            if (i + 1 < paginas.length && paginas[i + 1]) {
-                const pageNumRight = i + 2;
+            let pageNumRight = '';
+
+            if (i + 1 < limiteDuplas) {
+                pageNumRight = i + 2;
                 const urlRight = paginas[i + 1];
                 rightArticleHtml = `
                     <article class="rightPage page" style="background-image: url('${urlRight}');">
                         <span class="pagenumber">${pageNumRight}</span>
                     </article>
                 `;
+                i += 2;
             } else {
                 rightArticleHtml = `
                     <article class="rightPage page" style="background: #1f1f1f;">
                         <span class="pagenumber">${i + 2}</span>
                     </article>
                 `;
+                i += 1;
             }
 
-            const itemIndex = (i / 2) + 1;
             const carouselItemDiv = document.createElement("div");
-            
-            if (itemIndex === 1) {
-                carouselItemDiv.className = `carousel-item carousel-item--${itemIndex} active`;
-            } else {
-                carouselItemDiv.className = `carousel-item carousel-item--${itemIndex}`;
-            }
+            carouselItemDiv.className = `carousel-item carousel-item--double`;
 
             carouselItemDiv.innerHTML = `
                 <article class="leftPage page" style="background-image: url('${urlLeft}');">
@@ -79,6 +106,26 @@ document.addEventListener("DOMContentLoaded", async function () {
                 magazineContainer.insertBefore(carouselItemDiv, navElement);
             } else {
                 magazineContainer.appendChild(carouselItemDiv);
+            }
+            itemIndex++;
+        }
+
+        // 3. ÚLTIMA PÁGINA SOZINHA (Contracapa / Ex: Página 8)
+        if (totalPaginas > 1 && (totalPaginas % 2 === 0 || totalPaginas > limiteDuplas)) {
+            const ultimaPaginaIndex = totalPaginas - 1;
+            const urlContracapa = paginas[ultimaPaginaIndex] || "../assets/imgNotFound.jpg";
+            const lastSingleDiv = document.createElement("div");
+            lastSingleDiv.className = `carousel-item carousel-item--single`;
+
+            lastSingleDiv.innerHTML = `
+                <article class="singlePage page" style="background-image: url('${urlContracapa}');">
+                    <span class="pagenumber">${totalPaginas}</span>
+                </article>
+            `;
+            if (navElement) {
+                magazineContainer.insertBefore(lastSingleDiv, navElement);
+            } else {
+                magazineContainer.appendChild(lastSingleDiv);
             }
         }
 
