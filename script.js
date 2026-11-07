@@ -1,4 +1,6 @@
 import { salvarOuAtualizarUsuarioGoogle, buscarUsuarioPorId } from "./config/usuario-repository.js";
+import { db } from "./config/firebase-config.js";
+import { collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const CLIENT_ID = "334263251975-0ov5qpk3lo495j9e65hjhjqbto700ihn.apps.googleusercontent.com"; 
 let tokenClient = null;
@@ -8,15 +10,15 @@ document.addEventListener("DOMContentLoaded", function () {
     const profileCard = document.getElementById("profileCard");
     const btnGoogleLogin = document.getElementById("btnGoogleLogin");
     const btnLogout = document.getElementById("btnLogout");
+    const listaZinesSection = document.getElementById("listaZinesSection");
+    const zinesContainer = document.getElementById("zinesContainer");
 
-    // Verifica se já existe uma sessão ativa válida ao carregar a página
     verificarSessaoAtiva();
 
     function inicializarGoogleClient() {
         if (window.google && window.google.accounts && window.google.accounts.oauth2) {
             tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: CLIENT_ID,
-                // IMPORTANTE: Inclui explicitamente os escopos do Drive e de Perfil/Email
                 scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
                 callback: async (response) => {
                     if (response.error) {
@@ -26,14 +28,12 @@ document.addEventListener("DOMContentLoaded", function () {
                     }
                     
                     const accessToken = response.access_token;
-                    // Salva o novo token fresco na sessão com validade de 1 hora
                     sessionStorage.setItem("google_access_token", accessToken);
                     sessionStorage.setItem("token_expiration", Date.now() + 3600000);
 
                     await processarLoginGoogle(accessToken);
                 },
             });
-            console.log("Google Identity Services inicializado com sucesso!");
         } else {
             setTimeout(inicializarGoogleClient, 500);
         }
@@ -41,24 +41,22 @@ document.addEventListener("DOMContentLoaded", function () {
 
     inicializarGoogleClient();
 
-    // Botão de login abre o pop-up do Google forçando a geração de um novo token fresco
     if (btnGoogleLogin) {
         btnGoogleLogin.addEventListener("click", () => {
             if (!tokenClient) {
-                alert("O sistema do Google ainda está carregando. Aguarde um segundo e tente novamente.");
+                alert("O sistema do Google ainda está carregando. Tente novamente.");
                 return;
             }
-            // O parâmetro prompt: 'consent' força a revalidação e a criação de um token novo com todos os escopos
             tokenClient.requestAccessToken({ prompt: 'consent' });
         });
     }
 
-    // Botão de logout limpa completamente a sessão e retorna ao card de login
     if (btnLogout) {
         btnLogout.addEventListener("click", () => {
             sessionStorage.clear();
             if (profileCard) profileCard.classList.add("d-none");
             if (loginCard) loginCard.classList.remove("d-none");
+            if (listaZinesSection) listaZinesSection.classList.add("d-none");
         });
     }
 
@@ -102,7 +100,6 @@ document.addEventListener("DOMContentLoaded", function () {
         const token = sessionStorage.getItem("google_access_token");
         const expiration = sessionStorage.getItem("token_expiration");
 
-        // Se o token ainda for válido, mantém a interface logada
         if (token && expiration && Date.now() < parseInt(expiration)) {
             atualizarInterfacePerfil();
         } else {
@@ -110,26 +107,120 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    async function carregarZines(userEmailLogado) {
+        if (!zinesContainer) return;
+        zinesContainer.innerHTML = "<p class='text-muted'>Carregando zines...</p>";
+
+        try {
+            const querySnapshot = await getDocs(collection(db, "zines"));
+            zinesContainer.innerHTML = "";
+
+            if (querySnapshot.empty) {
+                zinesContainer.innerHTML = "<p class='text-muted'>Nenhum zine criado ainda.</p>";
+                return;
+            }
+
+            const accessToken = sessionStorage.getItem("google_access_token");
+
+            for (const docSnap of querySnapshot.docs) {
+                const zine = docSnap.data();
+                const isDono = zine.userEmail === userEmailLogado;
+
+                // Busca a primeira imagem da pasta do Drive associada ao Zine
+                let primeiraImagemUrl = "assets/imgNotFound.jpg";
+                if (zine.pastaDriveId && accessToken) {
+                    try {
+                        const res = await fetch(`https://www.googleapis.com/drive/v3/files?q='${zine.pastaDriveId}'+in+parents+and+trashed=false&pageSize=1&orderBy=createdTime`, {
+                            headers: { 'Authorization': `Bearer ${accessToken}` }
+                        });
+                        const data = await res.json();
+                        if (data.files && data.files.length > 0) {
+                            primeiraImagemUrl = `https://lh3.googleusercontent.com/d/${data.files[0].id}`;
+                        }
+                    } catch (e) {
+                        console.error("Erro ao buscar imagem do Drive para o zine:", e);
+                    }
+                }
+
+                const col = document.createElement("div");
+                col.className = "col-md-4 mb-4";
+
+                let botoesAcao = `
+                    <a href="preview/index.html?folderId=${zine.pastaDriveId}&name=${encodeURIComponent(zine.nomeZine)}" class="btn btn-sm btn-outline-primary w-100 mb-1">Visualizar</a>
+                `;
+
+                if (isDono) {
+                    botoesAcao = `
+                        <a href="preview/index.html?folderId=${zine.pastaDriveId}&name=${encodeURIComponent(zine.nomeZine)}" class="btn btn-sm btn-outline-primary w-100 mb-1">Visualizar</a>
+                        <a href="createZine/index.htm?edit=${zine.id}" class="btn btn-sm btn-outline-secondary w-100 mb-1">Editar</a>
+                        <button class="btn btn-sm btn-outline-danger w-100 btn-excluir" data-id="${zine.id}">Excluir</button>
+                    `;
+                }
+
+                col.innerHTML = `
+                    <div class="card shadow-sm h-100">
+                        <img src="${primeiraImagemUrl}" class="card-img-top" alt="Capa do Zine" style="height: 200px; object-fit: cover;" onerror="this.src='assets/imgNotFound.jpg'">
+                        <div class="card-body d-flex flex-column justify-content-between">
+                            <div>
+                                <h5 class="card-title fw-bold text-dark mb-1" style="font-size: 1.25rem;">${zine.nomeZine}</h5>
+                                <p class="card-text text-muted small mb-3" style="font-size: 0.85rem;">Autor: ${zine.userEmail}</p>
+                            </div>
+                            <div class="d-grid gap-1">
+                                ${botoesAcao}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                zinesContainer.appendChild(col);
+            }
+
+            // Eventos para botões de exclusão
+            document.querySelectorAll(".btn-excluir").forEach(btn => {
+                btn.addEventListener("click", async function() {
+                    const zineId = this.getAttribute("data-id");
+                    if (confirm("Tem certeza que deseja excluir este zine?")) {
+                        try {
+                            await deleteDoc(doc(db, "zines", zineId));
+                            alert("Zine excluído com sucesso!");
+                            carregarZines(userEmailLogado);
+                        } catch (err) {
+                            console.error("Erro ao excluir:", err);
+                            alert("Erro ao excluir o zine.");
+                        }
+                    }
+                });
+            });
+
+        } catch (error) {
+            console.error("Erro ao carregar zines:", error);
+            zinesContainer.innerHTML = "<p class='text-danger'>Erro ao carregar lista de zines.</p>";
+        }
+    }
+
     function atualizarInterfacePerfil() {
         if (loginCard && profileCard) {
             loginCard.classList.add("d-none");
             profileCard.classList.remove("d-none");
+            if (listaZinesSection) listaZinesSection.classList.remove("d-none");
 
             const nickEl = document.getElementById("userNickname");
             const emailEl = document.getElementById("userEmail");
             const avatarEl = document.getElementById("userAvatar");
 
-            if (nickEl) nickEl.textContent = sessionStorage.getItem("user_nickname");
-            if (emailEl) emailEl.textContent = sessionStorage.getItem("user_email");
+            const nickname = sessionStorage.getItem("user_nickname");
+            const email = sessionStorage.getItem("user_email");
+
+            if (nickEl) nickEl.textContent = nickname;
+            if (emailEl) emailEl.textContent = email;
             
             if (avatarEl) {
-                const avatarUrl = sessionStorage.getItem("user_avatar");
-                avatarEl.src = avatarUrl;
-                
+                avatarEl.src = sessionStorage.getItem("user_avatar") || "assets/imgNotFound.jpg";
                 avatarEl.onerror = function() {
                     this.src = "assets/imgNotFound.jpg";
                 };
             }
+
+            carregarZines(email);
         }
     }
 });

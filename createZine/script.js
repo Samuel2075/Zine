@@ -1,5 +1,5 @@
 import { db } from "../config/firebase-config.js";
-import { collection, getDocs, query, where, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, getDocs, getDoc, query, where, setDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { salvarCapaNoDrive } from "../config/drive-repository.js";
 
 document.addEventListener("DOMContentLoaded", async function () {
@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     const zineNameInput = document.getElementById("zineName");
     const btnLogout = document.getElementById("btnLogout");
 
-    // 1. Validação de Sessão: Se não houver token ou expirar, redireciona para o index (login)
+    // 1. Validação de Sessão
     const accessToken = sessionStorage.getItem("google_access_token");
     const tokenExpiration = sessionStorage.getItem("token_expiration");
     const userEmail = sessionStorage.getItem("user_email");
@@ -21,25 +21,48 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
 
     const userId = userEmail.replace(/[.#$[\]]/g, "_");
-    let pastaDriveId = null; // ID da pasta criada no Google Drive para este Zine
+    let pastaDriveId = null; 
+    let zineIdFinal = "";
 
-    // 4. Preenche o input do Zine com base na quantidade de zines já criados pelo usuário ("Sem titulo 01", etc.)
-    async function sugerirNomeZine() {
+    // Verifica se há um Zine sendo editado via URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const zineEditId = urlParams.get("edit");
+
+    if (zineEditId) {
+        // MODO EDIÇÃO: Carrega os dados existentes do Zine
         try {
-            const q = query(collection(db, "zines"), where("userId", "==", userId));
-            const querySnapshot = await getDocs(q);
-            const totalZines = querySnapshot.size + 1;
-            const numeroFormatado = String(totalZines).padStart(2, '0');
-            zineNameInput.value = `Sem titulo ${numeroFormatado}`;
+            const docRef = doc(db, "zines", zineEditId);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                const zineData = docSnap.data();
+                zineNameInput.value = zineData.nomeZine;
+                pastaDriveId = zineData.pastaDriveId;
+                templateSelect.value = zineData.templateQuantidade || "8";
+                zineIdFinal = zineData.id;
+
+                // Renderiza os cards e carrega as imagens já salvas no Drive
+                await renderizarCardsEImagens(parseInt(zineData.templateQuantidade), pastaDriveId, accessToken);
+            }
         } catch (error) {
-            console.error("Erro ao calcular sequência de Zines:", error);
-            zineNameInput.value = "Sem titulo 01";
+            console.error("Erro ao carregar zine para edição:", error);
         }
+    } else {
+        // MODO CRIAÇÃO: Sugere um nome novo
+        async function sugerirNomeZine() {
+            try {
+                const q = query(collection(db, "zines"), where("userId", "==", userId));
+                const querySnapshot = await getDocs(q);
+                const totalZines = querySnapshot.size + 1;
+                const numeroFormatado = String(totalZines).padStart(2, '0');
+                zineNameInput.value = `Sem titulo ${numeroFormatado}`;
+            } catch (error) {
+                console.error("Erro ao calcular sequência de Zines:", error);
+                zineNameInput.value = "Sem titulo 01";
+            }
+        }
+        await sugerirNomeZine();
     }
 
-    await sugerirNomeZine();
-
-    // Botão de Logout limpa a sessão e retorna ao login
     if (btnLogout) {
         btnLogout.addEventListener("click", () => {
             sessionStorage.clear();
@@ -47,7 +70,6 @@ document.addEventListener("DOMContentLoaded", async function () {
         });
     }
 
-    // Função auxiliar para formatar a data atual: diaMesAnoHoraMinutoSegundo
     function obterTimestampFormatado() {
         const agora = new Date();
         const d = String(agora.getDate()).padStart(2, '0');
@@ -59,7 +81,6 @@ document.addEventListener("DOMContentLoaded", async function () {
         return `${d}${m}${y}${h}${min}${s}`;
     }
 
-    // 6. Função para criar a pasta dedicada no Google Drive antes do primeiro upload
     async function garantirPastaNoDrive() {
         if (pastaDriveId) return pastaDriveId;
 
@@ -83,7 +104,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         if (!response.ok) {
             const errorData = await response.json();
-            console.error("Detalhes do erro 403/Drive:", errorData);
+            console.error("Detalhes do erro do Drive:", errorData);
             throw new Error(`Erro ao criar pasta no Google Drive (${response.status}): ${response.statusText}`);
         }
 
@@ -92,18 +113,21 @@ document.addEventListener("DOMContentLoaded", async function () {
         return pastaDriveId;
     }
 
-    // Lógica de renderização dos cards com base no template selecionado
+    // Evento de mudança no select de templates (Modo Criação)
     templateSelect.addEventListener("change", function () {
         const quantidade = parseInt(this.value);
-        templatesUpload.innerHTML = "";
+        if (!isNaN(quantidade)) {
+            renderizarCardsEImagens(quantidade, null, null);
+        }
+    });
 
-        if (isNaN(quantidade)) return;
+    async function renderizarCardsEImagens(quantidade, folderId, token) {
+        templatesUpload.innerHTML = "";
 
         for (let i = 1; i <= quantidade; i++) {
             const colDiv = document.createElement("div");
             colDiv.className = "col-md-3 mb-4";
 
-            // Corrigido o caminho da imagem padrão e removido o loop do onerror
             colDiv.innerHTML = `
                 <div class="card shadow-sm" style="width: 100%;">
                     <img class="card-img-top card-img-${i}" src="../assets/imgNotFound.jpg" alt="Capa ${i}" style="height: 180px; object-fit: cover;">
@@ -118,7 +142,29 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
 
         ativarEventosUpload();
-    });
+
+        // Se estivermos editando, busca as imagens já enviadas para esta pasta do Drive e preenche os cards
+        if (folderId && token) {
+            try {
+                const res = await fetch(`https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&orderBy=createdTime`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                
+                if (data.files && data.files.length > 0) {
+                    data.files.forEach((file, index) => {
+                        const cardIndex = index + 1;
+                        const imgElement = document.querySelector(`.card-img-${cardIndex}`);
+                        if (imgElement) {
+                            imgElement.src = `https://lh3.googleusercontent.com/d/${file.id}`;
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error("Erro ao carregar imagens existentes do Drive:", err);
+            }
+        }
+    }
 
     function ativarEventosUpload() {
         document.querySelectorAll(".btn-upload").forEach(botao => {
@@ -141,21 +187,20 @@ document.addEventListener("DOMContentLoaded", async function () {
                     imagemCard.style.opacity = "0.4";
 
                     try {
-                        // Garante que a pasta única do Zine foi criada no Drive
                         const folderId = await garantirPastaNoDrive();
-
-                        // Faz o upload da imagem para dentro da pasta específica do Zine no Drive
                         const downloadURL = await salvarCapaNoDrive(file, accessToken, folderId);
 
                         imagemCard.src = downloadURL;
                         imagemCard.style.opacity = "1";
 
-                        // 5. Salva ou atualiza o registo do Zine no Firestore para futura listagem
-                        const zineId = `${userId}_${zineNameInput.value.replace(/\s+/g, '_')}`;
-                        const zineRef = doc(db, "zines", zineId);
+                        if (!zineIdFinal) {
+                            zineIdFinal = `${userId}_${zineNameInput.value.replace(/\s+/g, '_')}`;
+                        }
+                        
+                        const zineRef = doc(db, "zines", zineIdFinal);
 
                         const zineData = {
-                            id: zineId,
+                            id: zineIdFinal,
                             userId: userId,
                             userEmail: userEmail,
                             nomeZine: zineNameInput.value,
