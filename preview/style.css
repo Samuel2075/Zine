@@ -40,7 +40,6 @@ section {
     flex-shrink: 0;
 }
 
-/* Estilo para páginas duplas unidas sem espaço */
 .carousel-item--double {
     justify-content: center;
 }
@@ -55,17 +54,14 @@ article {
     margin: 0;
     position: relative;
     
-    /* REMOVIDO O BOX-SHADOW INTERNO QUE CRIAVA A SOMBRA DA LOMBADA */
     box-shadow: none;
     
     background-position: center;
     background-repeat: no-repeat;
     
-    /* MUDADO PARA COVER PARA PREENCHER TOTALMENTE O ESPAÇO SEM BORDAS PRETAS */
     background-size: cover; 
 }
 
-/* Remove qualquer espaçamento entre a página esquerda e a direita */
 .leftPage {
     margin-right: 0 !important;
     border-right: none !important;
@@ -76,7 +72,6 @@ article {
     border-left: none !important;
 }
 
-/* Página única centralizada (Capa e Contracapa) */
 .singlePage {
     width: 8.5in;
     height: 11in;

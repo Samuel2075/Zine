@@ -1,9 +1,3 @@
-/**
- * Faz o upload de um arquivo para o Google Drive usando a API v3
- * @param {File} file - O arquivo de imagem selecionado
- * @param {string} accessToken - Token de acesso OAuth 2.0 temporário
- * @param {string} [folderId] - ID da pasta do Drive onde o arquivo será salvo (opcional)
- */
 export async function salvarCapaNoDrive(file, accessToken, folderId = null) {
     try {
         const metadata = {
@@ -11,7 +5,6 @@ export async function salvarCapaNoDrive(file, accessToken, folderId = null) {
             mimeType: file.type
         };
 
-        // Se quiser salvar em uma pasta específica do seu Drive, informe o ID dela
         if (folderId) {
             metadata.parents = [folderId];
         }
@@ -35,7 +28,6 @@ export async function salvarCapaNoDrive(file, accessToken, folderId = null) {
         const data = await response.json();
         const fileId = data.id;
 
-        // Concede permissão pública de leitura para que a tag <img> consiga exibir a imagem sem erro 403
         await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}/permissions`, {
             method: 'POST',
             headers: new Headers({
@@ -48,7 +40,6 @@ export async function salvarCapaNoDrive(file, accessToken, folderId = null) {
             })
         });
 
-        // Retorna o link direto otimizado para exibição em tags <img>
         return `https://lh3.googleusercontent.com/d/${fileId}`;
 
     } catch (error) {

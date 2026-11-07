@@ -124,7 +124,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 const zine = docSnap.data();
                 const isDono = zine.userEmail === userEmailLogado;
 
-                // Pega a primeira imagem diretamente do array salvo no Firestore
                 let primeiraImagemUrl = "assets/imgNotFound.jpg";
                 if (zine.paginas && zine.paginas.length > 0 && zine.paginas[0]) {
                     primeiraImagemUrl = zine.paginas[0];

@@ -26,7 +26,6 @@ document.addEventListener("DOMContentLoaded", async function () {
         const zineData = docSnap.data();
         if (titleEl) titleEl.textContent = zineData.nomeZine;
 
-        // Garante que usamos o array de páginas salvo
         const paginas = zineData.paginas || [];
 
         if (paginas.length === 0) {
@@ -40,7 +39,6 @@ document.addEventListener("DOMContentLoaded", async function () {
         let itemIndex = 1;
         const totalPaginas = paginas.length;
 
-        // 1. PRIMEIRA PÁGINA SOZINHA (Capa - Posição 0 do array)
         if (totalPaginas > 0) {
             const urlCapa = paginas[0] || "../assets/imgNotFound.jpg";
             const singleItemDiv = document.createElement("div");
@@ -59,12 +57,8 @@ document.addEventListener("DOMContentLoaded", async function () {
             itemIndex++;
         }
 
-        // 2. PÁGINAS INTERMÉDIAS EM DUPLA (Do índice 1 até o penúltimo, se houver)
         let i = 1;
         
-        // Determina se a última página deve ficar sozinha (caso o total seja par ou ímpar, dependendo da regra de negócio: se quiser a última sempre sozinha quando for par >= 4 ou ímpar)
-        // Aqui assumimos que se o total for par (ex: 8 páginas), a última (8) fica sozinha, logo as duplas vão até totalPaginas - 1.
-        // Se o total for ímpar, a última também fica sozinha.
         const limiteDuplas = (totalPaginas % 2 === 0 && totalPaginas > 2) ? totalPaginas - 1 : totalPaginas;
 
         while (i < limiteDuplas) {

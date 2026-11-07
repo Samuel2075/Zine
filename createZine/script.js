@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     const userId = userEmail.replace(/[.#$[\]]/g, "_");
     let pastaDriveId = null; 
     let zineIdFinal = "";
-    let paginasUrls = []; // Armazena os links diretos das imagens
+    let paginasUrls = [];
 
     const urlParams = new URLSearchParams(window.location.search);
     const zineEditId = urlParams.get("edit");
@@ -179,7 +179,6 @@ document.addEventListener("DOMContentLoaded", async function () {
                         imagemCard.src = downloadURL;
                         imagemCard.style.opacity = "1";
 
-                        // Atualiza o array de URLs na posição correta da página
                         paginasUrls[idCard - 1] = downloadURL;
 
                         if (!zineIdFinal) {
@@ -195,7 +194,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                             nomeZine: zineNameInput.value,
                             pastaDriveId: folderId,
                             templateQuantidade: templateSelect.value,
-                            paginas: paginasUrls, // Guarda os links diretos no Firestore
+                            paginas: paginasUrls,
                             atualizadoEm: new Date().toISOString()
                         };
 
