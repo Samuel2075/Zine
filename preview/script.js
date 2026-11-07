@@ -16,14 +16,18 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
 
     try {
-        // Busca os arquivos na pasta do Google Drive associada
-        const res = await fetch(`https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&orderBy=createdTime`, {
+        console.log("A consultar arquivos na pasta do Drive com ID:", folderId);
+
+        // Busca os arquivos na pasta do Google Drive com suporte a drives compartilhados e externos
+        const res = await fetch(`https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&orderBy=createdTime&supportsAllDrives=true&includeItemsFromAllDrives=true`, {
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
+        
         const data = await res.json();
+        console.log("Resposta da API do Drive:", data);
 
         if (!data.files || data.files.length === 0) {
-            magazineContainer.innerHTML = `<p style="color: #f39c12; text-align: center; width: 100%; margin-top: 50px;">Nenhuma página encontrada neste Zine.</p>`;
+            magazineContainer.innerHTML = `<p style="color: #f39c12; text-align: center; width: 100%; margin-top: 50px;">Nenhuma página encontrada neste Zine (Pasta vazia ou sem permissão de leitura).</p>`;
             return;
         }
 
@@ -60,7 +64,6 @@ document.addEventListener("DOMContentLoaded", async function () {
             const itemIndex = (i / 2) + 1;
             const carouselItemDiv = document.createElement("div");
             
-            // Adiciona a classe active logo no primeiro par para ele aparecer visível de imediato
             if (itemIndex === 1) {
                 carouselItemDiv.className = `carousel-item carousel-item--${itemIndex} active`;
             } else {
