@@ -2,7 +2,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// SUAS CREDENCIAIS DO FIREBASE
 const firebaseConfig = {
     apiKey: "AIzaSyAQeyuv5T3uF9tgI4JKog8UQSRZY-7K2QI",
     authDomain: "zine-4c928.firebaseapp.com",
@@ -13,7 +12,8 @@ const firebaseConfig = {
     measurementId: "G-N1GQYCSE8N"
 };
 
-// Inicializa o Firebase
 const app = initializeApp(firebaseConfig);
+
 export const storage = getStorage(app);
-export const db = getFirestore(app);
+
+export const db = getFirestore(app, "zine");

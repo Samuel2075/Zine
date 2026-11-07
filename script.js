@@ -1,85 +1,135 @@
-import { salvarCapaNoDrive } from "./config/drive-repository.js";
+import { salvarOuAtualizarUsuarioGoogle, buscarUsuarioPorId } from "./config/usuario-repository.js";
+
+const CLIENT_ID = "334263251975-0ov5qpk3lo495j9e65hjhjqbto700ihn.apps.googleusercontent.com"; 
+let tokenClient = null;
 
 document.addEventListener("DOMContentLoaded", function () {
-    const templateSelect = document.getElementById("templateSelect");
-    const templatesUpload = document.getElementById("templatesUpload");
+    const loginCard = document.getElementById("loginCard");
+    const profileCard = document.getElementById("profileCard");
+    const btnGoogleLogin = document.getElementById("btnGoogleLogin");
+    const btnLogout = document.getElementById("btnLogout");
 
-    templateSelect.addEventListener("change", function () {
-        const quantidade = parseInt(this.value);
-        templatesUpload.innerHTML = "";
+    // Verifica se já existe uma sessão ativa válida ao carregar a página
+    verificarSessaoAtiva();
 
-        if (isNaN(quantidade)) return;
-
-        for (let i = 1; i <= quantidade; i++) {
-            const colDiv = document.createElement("div");
-            colDiv.className = "col-md-3 mb-4";
-
-            colDiv.innerHTML = `
-                <div class="card" style="width: 100%;">
-                    <img class="card-img-top card-img-${i}" src="assets/imgNotFound.jpg" alt="Capa ${i}" style="height: 180px; object-fit: cover;">
-                    <div class="card-body">
-                        <h5 class="card-title">Capa ${i}</h5>
-                        <input type="file" id="fileInput-${i}" class="d-none" accept="image/jpeg, image/png">
-                        <button type="button" class="btn btn-primary btn-upload" data-id="${i}">Upload</button>
-                    </div>
-                </div>
-            `;
-            templatesUpload.appendChild(colDiv);
-        }
-
-        ativarEventosUpload();
-    });
-
-    function ativarEventosUpload() {
-        document.querySelectorAll(".btn-upload").forEach(botao => {
-            botao.addEventListener("click", function () {
-                const id = this.getAttribute("data-id");
-                document.getElementById(`fileInput-${id}`).click();
-            });
-        });
-
-        document.querySelectorAll("input[type='file']").forEach(input => {
-            input.onchange = async function (event) {
-                const file = event.target.files[0];
-                if (!file) return;
-
-                if (file.type === "image/jpeg" || file.type === "image/png") {
-                    const idCard = input.id.split("-")[1];
-                    const card = input.closest(".card");
-                    const imagemCard = card.querySelector(".card-img-top");
-                    
-                    imagemCard.style.opacity = "0.4";
-
-                    try {
-                        // ATENÇÃO: Aqui você deve passar o Access Token obtido no login do Google do usuário
-                        const accessToken = sessionStorage.getItem("google_access_token"); 
-                        
-                        if (!accessToken) {
-                            alert("Você precisa fazer login com sua conta Google antes de enviar arquivos.");
-                            imagemCard.style.opacity = "1";
-                            return;
-                        }
-
-                        // ID opcional da pasta no Drive onde você quer salvar os arquivos
-                        const pastaId = "COLOQUE_O_ID_DA_PASTA_AQUI_SE_QUISER"; 
-
-                        // Faz o upload direto para o Google Drive
-                        const downloadURL = await salvarCapaNoDrive(file, accessToken, pastaId);
-
-                        imagemCard.src = downloadURL;
-                        imagemCard.style.opacity = "1";
-                        console.log(`Capa ${idCard} enviada para o Google Drive com sucesso!`);
-
-                    } catch (error) {
-                        alert("Erro ao enviar a imagem para o Google Drive.");
-                        imagemCard.style.opacity = "1";
+    function inicializarGoogleClient() {
+        if (window.google && window.google.accounts && window.google.accounts.oauth2) {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                // IMPORTANTE: Inclui explicitamente os escopos do Drive e de Perfil/Email
+                scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
+                callback: async (response) => {
+                    if (response.error) {
+                        console.error("Erro na autenticação:", response);
+                        alert("Falha na autenticação com o Google.");
+                        return;
                     }
+                    
+                    const accessToken = response.access_token;
+                    // Salva o novo token fresco na sessão com validade de 1 hora
+                    sessionStorage.setItem("google_access_token", accessToken);
+                    sessionStorage.setItem("token_expiration", Date.now() + 3600000);
 
-                } else {
-                    alert("Apenas arquivos JPEG ou PNG são permitidos.");
-                    this.value = "";
-                }
-            };
+                    await processarLoginGoogle(accessToken);
+                },
+            });
+            console.log("Google Identity Services inicializado com sucesso!");
+        } else {
+            setTimeout(inicializarGoogleClient, 500);
+        }
+    }
+
+    inicializarGoogleClient();
+
+    // Botão de login abre o pop-up do Google forçando a geração de um novo token fresco
+    if (btnGoogleLogin) {
+        btnGoogleLogin.addEventListener("click", () => {
+            if (!tokenClient) {
+                alert("O sistema do Google ainda está carregando. Aguarde um segundo e tente novamente.");
+                return;
+            }
+            // O parâmetro prompt: 'consent' força a revalidação e a criação de um token novo com todos os escopos
+            tokenClient.requestAccessToken({ prompt: 'consent' });
         });
+    }
+
+    // Botão de logout limpa completamente a sessão e retorna ao card de login
+    if (btnLogout) {
+        btnLogout.addEventListener("click", () => {
+            sessionStorage.clear();
+            if (profileCard) profileCard.classList.add("d-none");
+            if (loginCard) loginCard.classList.remove("d-none");
+        });
+    }
+
+    async function processarLoginGoogle(accessToken) {
+        try {
+            const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+            const userInfo = await res.json();
+
+            let usuarioFirestore = await buscarUsuarioPorId(userInfo.email);
+            let nicknameFinal = "";
+
+            if (usuarioFirestore && usuarioFirestore.nickname) {
+                nicknameFinal = usuarioFirestore.nickname;
+            } else {
+                nicknameFinal = prompt("Escolha o seu Nickname para o sistema:", userInfo.name || "Usuário");
+                if (!nicknameFinal) nicknameFinal = userInfo.name || "Usuário";
+            }
+
+            const avatarFinal = userInfo.picture || "assets/imgNotFound.jpg";
+
+            await salvarOuAtualizarUsuarioGoogle(userInfo.email, {
+                nome: userInfo.name,
+                nickname: nicknameFinal,
+                avatar: avatarFinal
+            });
+
+            sessionStorage.setItem("user_nickname", nicknameFinal);
+            sessionStorage.setItem("user_email", userInfo.email);
+            sessionStorage.setItem("user_avatar", avatarFinal);
+
+            atualizarInterfacePerfil();
+        } catch (error) {
+            console.error("Erro ao processar login do Google:", error);
+            alert("Erro ao processar os dados do utilizador.");
+        }
+    }
+
+    function verificarSessaoAtiva() {
+        const token = sessionStorage.getItem("google_access_token");
+        const expiration = sessionStorage.getItem("token_expiration");
+
+        // Se o token ainda for válido, mantém a interface logada
+        if (token && expiration && Date.now() < parseInt(expiration)) {
+            atualizarInterfacePerfil();
+        } else {
+            sessionStorage.clear();
+        }
+    }
+
+    function atualizarInterfacePerfil() {
+        if (loginCard && profileCard) {
+            loginCard.classList.add("d-none");
+            profileCard.classList.remove("d-none");
+
+            const nickEl = document.getElementById("userNickname");
+            const emailEl = document.getElementById("userEmail");
+            const avatarEl = document.getElementById("userAvatar");
+
+            if (nickEl) nickEl.textContent = sessionStorage.getItem("user_nickname");
+            if (emailEl) emailEl.textContent = sessionStorage.getItem("user_email");
+            
+            if (avatarEl) {
+                const avatarUrl = sessionStorage.getItem("user_avatar");
+                avatarEl.src = avatarUrl;
+                
+                avatarEl.onerror = function() {
+                    this.src = "assets/imgNotFound.jpg";
+                };
+            }
+        }
     }
 });
