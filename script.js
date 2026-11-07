@@ -11,7 +11,34 @@ document.addEventListener("DOMContentLoaded", function () {
     const btnGoogleLogin = document.getElementById("btnGoogleLogin");
     const btnLogout = document.getElementById("btnLogout");
     const listaZinesSection = document.getElementById("listaZinesSection");
-    const zinesContainer = document.getElementById("zinesContainer");
+    
+    const meusZinesContainer = document.getElementById("meusZinesContainer");
+    const zinesPublicadosContainer = document.getElementById("zinesPublicadosContainer");
+
+    // Instância do Modal do Bootstrap para Confirmação de Exclusão
+    const modalElement = document.getElementById('modalConfirmacao');
+    const modalBootstrap = window.bootstrap ? new bootstrap.Modal(modalElement) : null;
+    let zineIdParaExcluir = null;
+
+    // Função de Notificação Flutuante Personalizada
+    function mostrarNotificacao(mensagem, tipo = "success") {
+        const toastContainer = document.getElementById("toastContainer");
+        if (!toastContainer) return;
+
+        const toast = document.createElement("div");
+        toast.className = `alert alert-${tipo === "success" ? "success" : "danger"} shadow-sm py-2 px-3 mb-2`;
+        toast.style.minWidth = "250px";
+        toast.style.fontSize = "14px";
+        toast.textContent = mensagem;
+
+        toastContainer.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.transition = "opacity 0.5s ease";
+            toast.style.opacity = "0";
+            setTimeout(() => toast.remove(), 500);
+        }, 3000);
+    }
 
     verificarSessaoAtiva();
 
@@ -23,7 +50,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 callback: async (response) => {
                     if (response.error) {
                         console.error("Erro na autenticação:", response);
-                        alert("Falha na autenticação com o Google.");
+                        mostrarNotificacao("Falha na autenticação com o Google.", "error");
                         return;
                     }
 
@@ -44,7 +71,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (btnGoogleLogin) {
         btnGoogleLogin.addEventListener("click", () => {
             if (!tokenClient) {
-                alert("O sistema do Google ainda está carregando. Tente novamente.");
+                mostrarNotificacao("O sistema do Google ainda está carregando. Tente novamente.", "error");
                 return;
             }
             tokenClient.requestAccessToken({ prompt: 'consent' });
@@ -57,6 +84,7 @@ document.addEventListener("DOMContentLoaded", function () {
             if (profileCard) profileCard.classList.add("d-none");
             if (loginCard) loginCard.classList.remove("d-none");
             if (listaZinesSection) listaZinesSection.classList.add("d-none");
+            mostrarNotificacao("Sessão encerrada com sucesso.");
         });
     }
 
@@ -89,10 +117,11 @@ document.addEventListener("DOMContentLoaded", function () {
             sessionStorage.setItem("user_email", userInfo.email);
             sessionStorage.setItem("user_avatar", avatarFinal);
 
+            mostrarNotificacao("Login efetuado com sucesso!");
             atualizarInterfacePerfil();
         } catch (error) {
             console.error("Erro ao processar login do Google:", error);
-            alert("Erro ao processar os dados do utilizador.");
+            mostrarNotificacao("Erro ao processar os dados do utilizador.", "error");
         }
     }
 
@@ -108,19 +137,27 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     async function carregarZines(userEmailLogado) {
-        if (!zinesContainer) return;
-        zinesContainer.innerHTML = "<p class='text-muted'>Carregando zines...</p>";
+        if (!meusZinesContainer || !zinesPublicadosContainer) return;
+
+        meusZinesContainer.innerHTML = "<p class='text-muted'>Carregando os seus zines...</p>";
+        zinesPublicadosContainer.innerHTML = "<p class='text-muted'>Carregando zines publicados...</p>";
 
         try {
             const querySnapshot = await getDocs(collection(db, "zines"));
-            zinesContainer.innerHTML = "";
+            
+            meusZinesContainer.innerHTML = "";
+            zinesPublicadosContainer.innerHTML = "";
+
+            let countMeus = 0;
+            let countPublicos = 0;
 
             if (querySnapshot.empty) {
-                zinesContainer.innerHTML = "<p class='text-muted'>Nenhum zine criado ainda.</p>";
+                meusZinesContainer.innerHTML = "<p class='text-muted'>Você ainda não criou nenhum zine.</p>";
+                zinesPublicadosContainer.innerHTML = "<p class='text-muted'>Nenhum zine publicado no momento.</p>";
                 return;
             }
 
-            for (const docSnap of querySnapshot.docs) {
+            querySnapshot.forEach((docSnap) => {
                 const zine = docSnap.data();
                 const isDono = zine.userEmail === userEmailLogado;
 
@@ -129,58 +166,109 @@ document.addEventListener("DOMContentLoaded", function () {
                     primeiraImagemUrl = zine.paginas[0];
                 }
 
-                const col = document.createElement("div");
-                col.className = "col-md-4 mb-4";
-
-                let botoesAcao = `
-                    <a href="preview/index.html?id=${zine.id}" class="btn btn-sm btn-outline-primary w-100 mb-1">Visualizar</a>
-                `;
-
+                // 1. Seção: Meus Zines
                 if (isDono) {
-                    botoesAcao = `
-                        <a href="preview/index.html?id=${zine.id}" class="btn btn-sm btn-outline-primary w-100 mb-1">Visualizar</a>
-                        <a href="createZine/index.htm?edit=${zine.id}" class="btn btn-sm btn-outline-secondary w-100 mb-1">Editar</a>
-                        <button class="btn btn-sm btn-outline-danger w-100 btn-excluir" data-id="${zine.id}">Excluir</button>
-                    `;
-                }
+                    countMeus++;
+                    const colMeus = document.createElement("div");
+                    colMeus.className = "col-md-4 mb-4";
 
-                col.innerHTML = `
-                    <div class="card shadow-sm h-100">
-                        <img src="${primeiraImagemUrl}" class="card-img-top" alt="Capa do Zine" style="height: 200px; object-fit: cover;" onerror="this.src='assets/imgNotFound.jpg'">
-                        <div class="card-body d-flex flex-column justify-content-between">
-                            <div>
-                                <h5 class="card-title fw-bold text-dark mb-1" style="font-size: 1.25rem;">${zine.nomeZine}</h5>
-                                <p class="card-text text-muted small mb-3" style="font-size: 0.85rem;">Autor: ${zine.userEmail}</p>
-                            </div>
-                            <div class="d-grid gap-1">
-                                ${botoesAcao}
+                    const badgeStatus = zine.publicado 
+                        ? '<span class="badge bg-success mb-2">Publicado</span>' 
+                        : '<span class="badge bg-secondary mb-2">Rascunho</span>';
+
+                    colMeus.innerHTML = `
+                        <div class="card shadow-sm h-100">
+                            <img src="${primeiraImagemUrl}" class="card-img-top" alt="Capa do Zine" style="height: 200px; object-fit: cover;" onerror="this.src='assets/imgNotFound.jpg'">
+                            <div class="card-body d-flex flex-column justify-content-between">
+                                <div>
+                                    <h5 class="card-title fw-bold text-dark mb-1" style="font-size: 1.25rem;">${zine.nomeZine}</h5>
+                                    ${badgeStatus}
+                                    <p class="card-text text-muted small mb-2" style="font-size: 0.85rem;">Autor: Você</p>
+                                </div>
+                                <div class="d-grid gap-1">
+                                    <a href="preview/index.html?id=${zine.id}" class="btn btn-sm btn-outline-primary w-100 mb-1">Visualizar</a>
+                                    <a href="createZine/index.htm?edit=${zine.id}" class="btn btn-sm btn-outline-secondary w-100 mb-1">Editar / Publicar</a>
+                                    <button class="btn btn-sm btn-outline-danger w-100 btn-excluir" data-id="${zine.id}">Excluir</button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                `;
-                zinesContainer.appendChild(col);
+                    `;
+                    meusZinesContainer.appendChild(colMeus);
+                }
+
+                // 2. Seção: Zines Publicados da Comunidade
+                if (zine.publicado === true) {
+                    countPublicos++;
+                    const colPub = document.createElement("div");
+                    colPub.className = "col-md-4 mb-4";
+
+                    colPub.innerHTML = `
+                        <div class="card shadow-sm h-100">
+                            <img src="${primeiraImagemUrl}" class="card-img-top" alt="Capa do Zine" style="height: 200px; object-fit: cover;" onerror="this.src='assets/imgNotFound.jpg'">
+                            <div class="card-body d-flex flex-column justify-content-between">
+                                <div>
+                                    <h5 class="card-title fw-bold text-dark mb-1" style="font-size: 1.25rem;">${zine.nomeZine}</h5>
+                                    <p class="card-text text-muted small mb-3" style="font-size: 0.85rem;">Autor: ${zine.userEmail}</p>
+                                </div>
+                                <div class="d-grid gap-1">
+                                    <a href="preview/index.html?id=${zine.id}" class="btn btn-sm btn-primary w-100 mb-1">Visualizar Zine</a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    zinesPublicadosContainer.appendChild(colPub);
+                }
+            });
+
+            if (countMeus === 0) {
+                meusZinesContainer.innerHTML = "<p class='text-muted'>Você ainda não criou nenhum zine.</p>";
             }
 
+            if (countPublicos === 0) {
+                zinesPublicadosContainer.innerHTML = "<p class='text-muted'>Nenhum zine publicado no momento.</p>";
+            }
+
+            // Acionar abertura do Modal customizado ao clicar em excluir
             document.querySelectorAll(".btn-excluir").forEach(btn => {
-                btn.addEventListener("click", async function () {
-                    const zineId = this.getAttribute("data-id");
-                    if (confirm("Tem certeza que deseja excluir este zine?")) {
-                        try {
-                            await deleteDoc(doc(db, "zines", zineId));
-                            alert("Zine excluído com sucesso!");
-                            carregarZines(userEmailLogado);
-                        } catch (err) {
-                            console.error("Erro ao excluir:", err);
-                            alert("Erro ao excluir o zine.");
-                        }
+                btn.addEventListener("click", function () {
+                    zineIdParaExcluir = this.getAttribute("data-id");
+                    if (modalBootstrap) {
+                        modalBootstrap.show();
                     }
                 });
             });
 
         } catch (error) {
             console.error("Erro ao carregar zines:", error);
-            zinesContainer.innerHTML = "<p class='text-danger'>Erro ao carregar lista de zines.</p>";
+            meusZinesContainer.innerHTML = "<p class='text-danger'>Erro ao carregar os seus zines.</p>";
+            zinesPublicadosContainer.innerHTML = "<p class='text-danger'>Erro ao carregar zines publicados.</p>";
         }
+    }
+
+    // Evento de confirmação de exclusão dentro do Modal
+    const btnConfirmarExclusao = document.getElementById("btnConfirmarExclusao");
+    if (btnConfirmarExclusao) {
+        const novoBtnConfirmar = btnConfirmarExclusao.cloneNode(true);
+        btnConfirmarExclusao.parentNode.replaceChild(novoBtnConfirmar, btnConfirmarExclusao);
+
+        document.getElementById("btnConfirmarExclusao").addEventListener("click", async function () {
+            if (!zineIdParaExcluir) return;
+
+            const emailLogado = sessionStorage.getItem("user_email");
+
+            try {
+                await deleteDoc(doc(db, "zines", zineIdParaExcluir));
+                if (modalBootstrap) modalBootstrap.hide();
+                mostrarNotificacao("Zine excluído com sucesso!");
+                carregarZines(emailLogado);
+            } catch (err) {
+                console.error("Erro ao excluir:", err);
+                if (modalBootstrap) modalBootstrap.hide();
+                mostrarNotificacao("Erro ao excluir o zine.", "error");
+            } finally {
+                zineIdParaExcluir = null;
+            }
+        });
     }
 
     function atualizarInterfacePerfil() {

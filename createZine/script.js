@@ -7,15 +7,36 @@ document.addEventListener("DOMContentLoaded", async function () {
     const templatesUpload = document.getElementById("templatesUpload");
     const zineNameInput = document.getElementById("zineName");
     const btnLogout = document.getElementById("btnLogout");
+    const btnPublicar = document.getElementById("btnPublicar");
 
     const accessToken = sessionStorage.getItem("google_access_token");
     const tokenExpiration = sessionStorage.getItem("token_expiration");
     const userEmail = sessionStorage.getItem("user_email");
 
+    // Função de Notificação Personalizada
+    function mostrarNotificacao(mensagem, tipo = "success") {
+        const toastContainer = document.getElementById("toastContainer");
+        if (!toastContainer) return;
+
+        const toast = document.createElement("div");
+        toast.className = `alert alert-${tipo === "success" ? "success" : "danger"} shadow-sm py-2 px-3 mb-2`;
+        toast.style.minWidth = "250px";
+        toast.style.fontSize = "14px";
+        toast.textContent = mensagem;
+
+        toastContainer.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.transition = "opacity 0.5s ease";
+            toast.style.opacity = "0";
+            setTimeout(() => toast.remove(), 500);
+        }, 3000);
+    }
+
     if (!accessToken || !tokenExpiration || Date.now() >= parseInt(tokenExpiration) || !userEmail) {
-        alert("Sua sessão expirou ou você não está logado.");
+        mostrarNotificacao("Sua sessão expirou ou você não está logado.", "error");
         sessionStorage.clear();
-        window.location.href = "../index.html"; 
+        setTimeout(() => window.location.href = "../index.html", 1500);
         return;
     }
 
@@ -23,6 +44,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     let pastaDriveId = null; 
     let zineIdFinal = "";
     let paginasUrls = [];
+    let publicadoState = false; // Padrão: rascunho
 
     const urlParams = new URLSearchParams(window.location.search);
     const zineEditId = urlParams.get("edit");
@@ -38,6 +60,10 @@ document.addEventListener("DOMContentLoaded", async function () {
                 templateSelect.value = zineData.templateQuantidade || "8";
                 zineIdFinal = zineData.id;
                 paginasUrls = zineData.paginas || [];
+                publicadoState = zineData.publicado || false;
+
+                atualizarVisualBotaoPublicar();
+                btnPublicar.style.display = "inline-block";
 
                 await renderizarCardsEImagens(parseInt(zineData.templateQuantidade), paginasUrls);
             }
@@ -58,6 +84,42 @@ document.addEventListener("DOMContentLoaded", async function () {
             }
         }
         await sugerirNomeZine();
+    }
+
+    // Cores invertidas: Verde = Publicar | Vermelho = Despublicar
+    function atualizarVisualBotaoPublicar() {
+        if (publicadoState) {
+            btnPublicar.textContent = "Despublicar Zine";
+            btnPublicar.className = "btn btn-danger btn-sm"; // Vermelho para despublicar
+        } else {
+            btnPublicar.textContent = "Publicar Zine";
+            btnPublicar.className = "btn btn-success btn-sm"; // Verde para publicar
+        }
+    }
+
+    if (btnPublicar) {
+        btnPublicar.addEventListener("click", async () => {
+            if (!zineIdFinal) {
+                mostrarNotificacao("Adicione pelo menos uma imagem antes de alterar o status.", "error");
+                return;
+            }
+
+            publicadoState = !publicadoState;
+            atualizarVisualBotaoPublicar();
+
+            try {
+                const zineRef = doc(db, "zines", zineIdFinal);
+                await setDoc(zineRef, {
+                    publicado: publicadoState,
+                    atualizadoEm: new Date().toISOString()
+                }, { merge: true });
+
+                mostrarNotificacao(publicadoState ? "Zine publicado com sucesso!" : "Zine despublicado com sucesso!");
+            } catch (err) {
+                console.error("Erro ao atualizar status de publicação:", err);
+                mostrarNotificacao("Erro ao atualizar o status.", "error");
+            }
+        });
     }
 
     if (btnLogout) {
@@ -195,19 +257,21 @@ document.addEventListener("DOMContentLoaded", async function () {
                             pastaDriveId: folderId,
                             templateQuantidade: templateSelect.value,
                             paginas: paginasUrls,
+                            publicado: publicadoState,
                             atualizadoEm: new Date().toISOString()
                         };
 
                         await setDoc(zineRef, zineData, { merge: true });
+                        btnPublicar.style.display = "inline-block";
 
                     } catch (error) {
                         console.error("Erro detalhado no processo:", error);
-                        alert("Erro detalhado: " + error.message);
+                        mostrarNotificacao("Erro ao enviar imagem: " + error.message, "error");
                         imagemCard.style.opacity = "1";
                     }
 
                 } else {
-                    alert("Apenas arquivos JPEG ou PNG são permitidos.");
+                    mostrarNotificacao("Apenas arquivos JPEG ou PNG são permitidos.", "error");
                     this.value = "";
                 }
             };

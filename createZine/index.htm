@@ -12,12 +12,17 @@
 </head>
 
 <body class="bg-light">
+    <!-- Container para Notificações Personalizadas -->
+    <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
     <div class="container my-5">
         <div class="row mb-4">
             <div class="col-md-12 d-flex justify-content-between align-items-center">
                 <h2>Criar Novo Zine</h2>
-                <div>
-                    <a href="../index.html" class="btn btn-outline-secondary btn-sm me-2">Voltar</a>
+                <div class="d-flex align-items-center gap-2">
+                    <a href="../index.html" class="btn btn-outline-secondary btn-sm">Voltar</a>
+                    <!-- Botão de Publicar / Despublicar -->
+                    <button id="btnPublicar" class="btn btn-success btn-sm" style="display: none;">Publicar Zine</button>
                     <button id="btnLogout" class="btn btn-outline-danger btn-sm">Sair / Trocar Conta</button>
                 </div>
             </div>

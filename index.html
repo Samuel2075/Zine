@@ -9,6 +9,9 @@
 </head>
 <body class="bg-light">
 
+    <!-- Container para Notificações Personalizadas -->
+    <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
     <div class="container mt-5">
         <div class="row justify-content-center">
             <div class="col-md-6">
@@ -40,9 +43,36 @@
         </div>
 
         <div id="listaZinesSection" class="row mt-5 d-none">
+            <!-- Seção 1: Meus Zines (Públicos e Rascunhos) -->
+            <div class="col-12 mb-5">
+                <h3 class="mb-4 border-bottom pb-2">Meus Zines</h3>
+                <div id="meusZinesContainer" class="row">
+                </div>
+            </div>
+
+            <!-- Seção 2: Zines Publicados da Comunidade -->
             <div class="col-12">
-                <h3 class="mb-4 border-bottom pb-2">Zines Disponíveis</h3>
-                <div id="zinesContainer" class="row">
+                <h3 class="mb-4 border-bottom pb-2">Zines Publicados (Comunidade)</h3>
+                <div id="zinesPublicadosContainer" class="row">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação de Exclusão Customizado -->
+    <div class="modal fade" id="modalConfirmacao" tabindex="-1" aria-labelledby="modalConfirmacaoLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="modalConfirmacaoLabel">Confirmar Exclusão</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Tem certeza que deseja excluir este zine permanentemente?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="btnConfirmarExclusao" class="btn btn-danger btn-sm">Sim, Excluir</button>
                 </div>
             </div>
         </div>
