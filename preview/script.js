@@ -328,7 +328,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             let linkCitacao = "";
             if (com.zineCitadoId) {
                 // Caminho corrigido para garantir que aponta corretamente para o preview a partir da subpasta
-                linkCitacao = `<br><a href="preview/index.html?id=${com.zineCitadoId}" target="_blank" rel="noopener noreferrer" class="text-info text-decoration-underline small mt-1 d-inline-block">🔗 Ver Zine citado</a>`;
+                linkCitacao = `<br><a href="/preview/index.html?id=${com.zineCitadoId}" target="_blank" rel="noopener noreferrer" class="text-info text-decoration-none small d-inline-flex align-items-center gap-1">🔗 Ver Zine Citado</a>`;
             }
 
             let anexoHtml = "";
