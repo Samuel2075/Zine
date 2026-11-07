@@ -16,12 +16,36 @@ document.addEventListener("DOMContentLoaded", async function () {
     const comentarioAtualContainer = document.getElementById("comentarioAtualContainer");
     const sugestoesMentions = document.getElementById("sugestoesMentions");
 
+    const inputAnexo = document.getElementById("inputAnexo");
+    const previewAnexoContainer = document.getElementById("previewAnexoContainer");
+    const imgPreviewAnexo = document.getElementById("imgPreviewAnexo");
+    let anexoBase64 = null;
+
     const urlParams = new URLSearchParams(window.location.search);
     const zineId = urlParams.get("id");
 
+    function mostrarNotificacao(mensagem, tipo = "success") {
+        const toastContainer = document.getElementById("toastContainer");
+        if (!toastContainer) return;
+
+        const toast = document.createElement("div");
+        toast.className = `alert alert-${tipo === "success" ? "success" : "danger"} shadow-sm py-2 px-3 mb-2`;
+        toast.style.minWidth = "250px";
+        toast.style.fontSize = "14px";
+        toast.textContent = mensagem;
+
+        toastContainer.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.transition = "opacity 0.5s ease";
+            toast.style.opacity = "0";
+            setTimeout(() => toast.remove(), 500);
+        }, 3000);
+    }
+
     if (!zineId) {
-        alert("Zine não encontrado.");
-        window.location.href = "../index.html";
+        mostrarNotificacao("Zine não encontrado.", "error");
+        setTimeout(() => window.location.href = "../index.html?restaurar=true", 1500);
         return;
     }
 
@@ -29,29 +53,35 @@ document.addEventListener("DOMContentLoaded", async function () {
     let paginasUrls = [];
     let carouselItems = [];
     let currentIndex = 0;
-    let todosZinesPublicosCache = [];
+    let meusZinesCache = [];
 
-    async function carregarZinesParaMention() {
+    // Carregar APENAS zines do utilizador logado usando localStorage para garantir consistência
+    async function carregarMeusZinesParaMention() {
+        const userEmailLogado = localStorage.getItem("user_email");
+        if (!userEmailLogado) return;
+
         try {
             const snapshot = await getDocs(collection(db, "zines"));
-            todosZinesPublicosCache = [];
+            meusZinesCache = [];
             snapshot.forEach(d => {
                 const data = d.data();
-                if (data.publicado) todosZinesPublicosCache.push(data);
+                if (data.userEmail === userEmailLogado) {
+                    meusZinesCache.push(data);
+                }
             });
         } catch (e) {
-            console.error("Erro ao carregar cache para menções:", e);
+            console.error("Erro ao carregar cache de zines pessoais:", e);
         }
     }
-    carregarZinesParaMention();
+    carregarMeusZinesParaMention();
 
     try {
         const docRef = doc(db, "zines", zineId);
         const docSnap = await getDoc(docRef);
 
         if (!docSnap.exists()) {
-            alert("Zine não existe.");
-            window.location.href = "../index.html";
+            mostrarNotificacao("Zine não existe.", "error");
+            setTimeout(() => window.location.href = "../index.html?restaurar=true", 1500);
             return;
         }
 
@@ -67,7 +97,6 @@ document.addEventListener("DOMContentLoaded", async function () {
         zineTitleEl.textContent = "Erro ao carregar";
     }
 
-    // Correção robusta do algoritmo de montagem dos spreads (evita pular páginas como 3, 5, 7)
     function montarEstruturaLivro(paginas) {
         bookContainer.innerHTML = "";
         carouselItems = [];
@@ -75,13 +104,10 @@ document.addEventListener("DOMContentLoaded", async function () {
         if (paginas.length === 0) return;
 
         let slidesArray = [];
-        
-        // 1. Capa (Página 1 sozinha se houver mais de 1 página, ou única)
         slidesArray.push({ type: 'single', index: 0, url: paginas[0] });
 
-        // 2. Páginas internas em duplas corretas
         let i = 1;
-        const totalPaginas = paginas.persistedLength || paginas.length;
+        const totalPaginas = paginas.length;
 
         while (i < totalPaginas - 1) {
             let leftUrl = paginas[i];
@@ -100,7 +126,6 @@ document.addEventListener("DOMContentLoaded", async function () {
             }
         }
 
-        // 3. Contracapa (Última página sozinha, caso sobre)
         if (totalPaginas > 1 && (totalPaginas - 1) >= i) {
             slidesArray.push({ type: 'single', index: totalPaginas - 1, url: paginas[totalPaginas - 1] });
         }
@@ -156,11 +181,41 @@ document.addEventListener("DOMContentLoaded", async function () {
         mostrarSlide(currentIndex);
     });
 
+    // Inserção de Emojis
+    document.querySelectorAll(".btn-emoji").forEach(btn => {
+        btn.addEventListener("click", function() {
+            txtComentario.value += this.textContent;
+            txtComentario.focus();
+        });
+    });
+
+    // Processar Imagem Anexada
+    if (inputAnexo) {
+        inputAnexo.addEventListener("change", function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    anexoBase64 = evt.target.result;
+                    imgPreviewAnexo.src = anexoBase64;
+                    previewAnexoContainer.classList.remove("d-none");
+                };
+                reader.readAsDataURL(file);
+            } else {
+                anexoBase64 = null;
+                previewAnexoContainer.classList.add("d-none");
+            }
+        });
+    }
+
     btnAbrirComentario.addEventListener("click", () => {
         const itemAtual = carouselItems[currentIndex];
         const indices = JSON.parse(itemAtual.dataset.indicesPaginas);
 
         txtComentario.value = "";
+        anexoBase64 = null;
+        if (inputAnexo) inputAnexo.value = "";
+        if (previewAnexoContainer) previewAnexoContainer.classList.add("d-none");
         selectPaginaAlvo.innerHTML = "";
 
         if (indices.length > 1) {
@@ -177,6 +232,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         modalComentario.show();
     });
 
+    // Filtro de Autocompletar @ apenas com Meus Zines
     txtComentario.addEventListener("input", function() {
         const val = this.value;
         const cursorPos = this.selectionStart;
@@ -185,7 +241,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         if (match) {
             const termoBusca = match[1].toLowerCase();
-            const filtrados = todosZinesPublicosCache.filter(z => z.nomeZine.toLowerCase().includes(termoBusca));
+            const filtrados = meusZinesCache.filter(z => z.nomeZine.toLowerCase().includes(termoBusca));
 
             if (filtrados.length > 0) {
                 sugestoesMentions.innerHTML = "";
@@ -212,10 +268,11 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
     });
 
+    // Salvar Comentário
     document.getElementById("btnSalvarComentario").addEventListener("click", async () => {
         const texto = txtComentario.value.trim();
-        if (!texto) {
-            alert("Escreva algo no comentário.");
+        if (!texto && !anexoBase64) {
+            mostrarNotificacao("Escreva um comentário ou anexe uma imagem.", "error");
             return;
         }
 
@@ -223,16 +280,16 @@ document.addEventListener("DOMContentLoaded", async function () {
             ? JSON.parse(carouselItems[currentIndex].dataset.indicesPaginas)[0] 
             : parseInt(selectPaginaAlvo.value);
 
-        const userEmail = sessionStorage.getItem("user_email");
-        const userNickname = sessionStorage.getItem("user_nickname") || userEmail;
+        const userEmail = localStorage.getItem("user_email");
+        const userNickname = localStorage.getItem("user_nickname") || userEmail;
 
         if (!userEmail) {
-            alert("Você precisa estar logado para comentar.");
+            mostrarNotificacao("Você precisa estar logado para comentar.", "error");
             return;
         }
 
         let zineCitadoId = null;
-        todosZinesPublicosCache.forEach(z => {
+        meusZinesCache.forEach(z => {
             if (texto.includes(`@${z.nomeZine}`)) {
                 zineCitadoId = z.id;
             }
@@ -247,6 +304,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             autorEmail: userEmail,
             autorNickname: userNickname,
             zineCitadoId: zineCitadoId,
+            anexoUrl: anexoBase64 || null,
             atualizadoEm: new Date().toISOString()
         };
 
@@ -254,11 +312,11 @@ document.addEventListener("DOMContentLoaded", async function () {
             const zineRef = doc(db, "zines", zineAtualData.id);
             await setDoc(zineRef, { comentarios: zineAtualData.comentarios }, { merge: true });
             modalComentario.hide();
-            alert("Comentário salvo com sucesso!");
+            mostrarNotificacao("Comentário salvo com sucesso!");
             atualizarExibicaoComentarioPagina(paginaAlvo);
         } catch (e) {
             console.error("Erro ao salvar comentário:", e);
-            alert("Erro ao salvar comentário.");
+            mostrarNotificacao("Erro ao salvar comentário.", "error");
         }
     });
 
@@ -269,11 +327,18 @@ document.addEventListener("DOMContentLoaded", async function () {
             
             let linkCitacao = "";
             if (com.zineCitadoId) {
-                linkCitacao = `<br><a href="index.html?id=${com.zineCitadoId}" class="text-info text-decoration-underline small">Ver Zine citado</a>`;
+                // Caminho corrigido para garantir que aponta corretamente para o preview a partir da subpasta
+                linkCitacao = `<br><a href="preview/index.html?id=${com.zineCitadoId}" target="_blank" rel="noopener noreferrer" class="text-info text-decoration-underline small mt-1 d-inline-block">🔗 Ver Zine citado</a>`;
+            }
+
+            let anexoHtml = "";
+            if (com.anexoUrl) {
+                anexoHtml = `<div class="mt-2"><img src="${com.anexoUrl}" class="rounded border" style="max-height: 120px; object-fit: contain;"></div>`;
             }
 
             comentarioAtualContainer.innerHTML = `
-                <strong>${com.autorNickname}:</strong> ${com.texto}
+                <div><strong>${com.autorNickname}:</strong> ${com.texto}</div>
+                ${anexoHtml}
                 ${linkCitacao}
             `;
         } else {

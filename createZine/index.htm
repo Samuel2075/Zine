@@ -9,18 +9,65 @@
         integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 
     <title>Criar Novo Zine</title>
+    <style>
+        body {
+            background-color: #0f0f0f;
+            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            min-height: 100vh;
+        }
+
+        .card-custom {
+            background-color: #161616;
+            border: 1px solid #262626;
+            border-radius: 12px;
+            color: #e0e0e0;
+        }
+
+        .form-control, .form-select {
+            background-color: #121212 !important;
+            border: 1px solid #2a2a2a !important;
+            color: #ffffff !important;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: #404040 !important;
+            box-shadow: none !important;
+        }
+
+        .btn-dark-custom {
+            background-color: #222222;
+            border: 1px solid #333333;
+            color: #e0e0e0;
+        }
+        .btn-dark-custom:hover {
+            background-color: #2f2f2f;
+            border-color: #444444;
+            color: #ffffff;
+        }
+
+        .zine-upload-card {
+            background-color: #161616;
+            border: 1px solid #262626;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .zine-upload-card:hover {
+            border-color: #404040;
+        }
+    </style>
 </head>
 
-<body class="bg-light">
+<body>
     <!-- Container para Notificações Personalizadas -->
     <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
 
     <div class="container my-5">
-        <div class="row mb-4">
-            <div class="col-md-12 d-flex justify-content-between align-items-center">
-                <h2>Criar Novo Zine</h2>
+        <div class="row mb-4 align-items-center">
+            <div class="col-md-12 d-flex justify-content-between align-items-center border-bottom border-dark pb-3">
+                <h2 class="text-white fw-bold m-0">Criar Novo Zine</h2>
                 <div class="d-flex align-items-center gap-2">
-                    <a href="../index.html" class="btn btn-outline-secondary btn-sm">Voltar</a>
+                    <a href="../index.html" class="btn btn-dark-custom btn-sm">Voltar ao Início</a>
                     <!-- Botão de Publicar / Despublicar -->
                     <button id="btnPublicar" class="btn btn-success btn-sm" style="display: none;">Publicar Zine</button>
                     <button id="btnLogout" class="btn btn-outline-danger btn-sm">Sair / Trocar Conta</button>
@@ -30,23 +77,25 @@
 
         <div class="row mb-4">
             <div class="col-md-6">
-                <form id="zineForm">
-                    <div class="mb-3">
-                        <label for="zineName" class="form-label">Nome do Zine</label>
-                        <input type="text" class="form-control" id="zineName" required>
-                    </div>
+                <div class="card card-custom p-4 shadow-sm">
+                    <form id="zineForm">
+                        <div class="mb-3">
+                            <label for="zineName" class="form-label text-secondary small">Nome do Zine</label>
+                            <input type="text" class="form-control" id="zineName" required>
+                        </div>
 
-                    <div class="mb-3">
-                        <label for="templateSelect" class="form-label">Template (Quantidade de Capas)</label>
-                        <select class="form-control" id="templateSelect" required>
-                            <option value="" selected disabled>Selecione um template</option>
-                            <option value="8">8</option>
-                            <option value="16">16</option>
-                            <option value="24">24</option>
-                            <option value="32">32</option>
-                        </select>
-                    </div>
-                </form>
+                        <div class="mb-3">
+                            <label for="templateSelect" class="form-label text-secondary small">Template (Quantidade de Capas)</label>
+                            <select class="form-select" id="templateSelect" required>
+                                <option value="" selected disabled>Selecione um template</option>
+                                <option value="8">8</option>
+                                <option value="16">16</option>
+                                <option value="24">24</option>
+                                <option value="32">32</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
 
