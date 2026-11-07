@@ -8,7 +8,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     const zineNameInput = document.getElementById("zineName");
     const btnLogout = document.getElementById("btnLogout");
 
-    // 1. Validação de Sessão
     const accessToken = sessionStorage.getItem("google_access_token");
     const tokenExpiration = sessionStorage.getItem("token_expiration");
     const userEmail = sessionStorage.getItem("user_email");
@@ -23,13 +22,12 @@ document.addEventListener("DOMContentLoaded", async function () {
     const userId = userEmail.replace(/[.#$[\]]/g, "_");
     let pastaDriveId = null; 
     let zineIdFinal = "";
+    let paginasUrls = []; // Armazena os links diretos das imagens
 
-    // Verifica se há um Zine sendo editado via URL
     const urlParams = new URLSearchParams(window.location.search);
     const zineEditId = urlParams.get("edit");
 
     if (zineEditId) {
-        // MODO EDIÇÃO: Carrega os dados existentes do Zine
         try {
             const docRef = doc(db, "zines", zineEditId);
             const docSnap = await getDoc(docRef);
@@ -39,15 +37,14 @@ document.addEventListener("DOMContentLoaded", async function () {
                 pastaDriveId = zineData.pastaDriveId;
                 templateSelect.value = zineData.templateQuantidade || "8";
                 zineIdFinal = zineData.id;
+                paginasUrls = zineData.paginas || [];
 
-                // Renderiza os cards e carrega as imagens já salvas no Drive
-                await renderizarCardsEImagens(parseInt(zineData.templateQuantidade), pastaDriveId, accessToken);
+                await renderizarCardsEImagens(parseInt(zineData.templateQuantidade), paginasUrls);
             }
         } catch (error) {
             console.error("Erro ao carregar zine para edição:", error);
         }
     } else {
-        // MODO CRIAÇÃO: Sugere um nome novo
         async function sugerirNomeZine() {
             try {
                 const q = query(collection(db, "zines"), where("userId", "==", userId));
@@ -104,47 +101,44 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         if (!response.ok) {
             const errorData = await response.json();
-            console.error("Detalhes do erro do Drive:", errorData);
             throw new Error(`Erro ao criar pasta no Google Drive (${response.status}): ${response.statusText}`);
         }
 
         const folderData = await response.json();
         pastaDriveId = folderData.id;
 
-        // Torna a pasta legível publicamente para que outros usuários consigam ler as imagens dela
         await fetch(`https://www.googleapis.com/drive/v3/files/${pastaDriveId}/permissions`, {
             method: 'POST',
             headers: new Headers({
                 'Authorization': 'Bearer ' + accessToken,
                 'Content-Type': 'application/json'
             }),
-            body: JSON.stringify({
-                role: 'reader',
-                type: 'anyone'
-            })
+            body: JSON.stringify({ role: 'reader', type: 'anyone' })
         });
 
         return pastaDriveId;
     }
 
-    // Evento de mudança no select de templates (Modo Criação)
     templateSelect.addEventListener("change", function () {
         const quantidade = parseInt(this.value);
         if (!isNaN(quantidade)) {
-            renderizarCardsEImagens(quantidade, null, null);
+            renderizarCardsEImagens(quantidade, paginasUrls);
         }
     });
 
-    async function renderizarCardsEImagens(quantidade, folderId, token) {
+    async function renderizarCardsEImagens(quantidade, urlsSalvas) {
         templatesUpload.innerHTML = "";
 
         for (let i = 1; i <= quantidade; i++) {
             const colDiv = document.createElement("div");
             colDiv.className = "col-md-3 mb-4";
+            
+            const indexArr = i - 1;
+            const imagemAtual = (urlsSalvas && urlsSalvas[indexArr]) ? urlsSalvas[indexArr] : "../assets/imgNotFound.jpg";
 
             colDiv.innerHTML = `
                 <div class="card shadow-sm" style="width: 100%;">
-                    <img class="card-img-top card-img-${i}" src="../assets/imgNotFound.jpg" alt="Capa ${i}" style="height: 180px; object-fit: cover;">
+                    <img class="card-img-top card-img-${i}" src="${imagemAtual}" alt="Capa ${i}" style="height: 180px; object-fit: cover;">
                     <div class="card-body text-center">
                         <h5 class="card-title">Capa ${i}</h5>
                         <input type="file" id="fileInput-${i}" class="d-none" accept="image/jpeg, image/png">
@@ -156,28 +150,6 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
 
         ativarEventosUpload();
-
-        // Se estivermos editando, busca as imagens já enviadas para esta pasta do Drive e preenche os cards
-        if (folderId && token) {
-            try {
-                const res = await fetch(`https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&orderBy=createdTime&supportsAllDrives=true&includeItemsFromAllDrives=true`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const data = await res.json();
-                
-                if (data.files && data.files.length > 0) {
-                    data.files.forEach((file, index) => {
-                        const cardIndex = index + 1;
-                        const imgElement = document.querySelector(`.card-img-${cardIndex}`);
-                        if (imgElement) {
-                            imgElement.src = `https://lh3.googleusercontent.com/d/${file.id}`;
-                        }
-                    });
-                }
-            } catch (err) {
-                console.error("Erro ao carregar imagens existentes do Drive:", err);
-            }
-        }
     }
 
     function ativarEventosUpload() {
@@ -194,7 +166,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                 if (!file) return;
 
                 if (file.type === "image/jpeg" || file.type === "image/png") {
-                    const idCard = input.id.split("-")[1];
+                    const idCard = parseInt(input.id.split("-")[1]);
                     const card = input.closest(".card");
                     const imagemCard = card.querySelector(".card-img-top");
                     
@@ -206,6 +178,9 @@ document.addEventListener("DOMContentLoaded", async function () {
 
                         imagemCard.src = downloadURL;
                         imagemCard.style.opacity = "1";
+
+                        // Atualiza o array de URLs na posição correta da página
+                        paginasUrls[idCard - 1] = downloadURL;
 
                         if (!zineIdFinal) {
                             zineIdFinal = `${userId}_${zineNameInput.value.replace(/\s+/g, '_')}`;
@@ -220,22 +195,15 @@ document.addEventListener("DOMContentLoaded", async function () {
                             nomeZine: zineNameInput.value,
                             pastaDriveId: folderId,
                             templateQuantidade: templateSelect.value,
+                            paginas: paginasUrls, // Guarda os links diretos no Firestore
                             atualizadoEm: new Date().toISOString()
                         };
 
                         await setDoc(zineRef, zineData, { merge: true });
-                        console.log(`Capa ${idCard} salva no Drive e metadados atualizados no Firestore!`);
 
                     } catch (error) {
                         console.error("Erro detalhado no processo:", error);
-                        
-                        if (error.message && (error.message.includes("401") || error.message.includes("Unauthorized"))) {
-                            sessionStorage.clear();
-                            alert("Sua sessão expirou. Por favor, faça login novamente.");
-                            window.location.href = "../index.html";
-                        } else {
-                            alert("Erro detalhado: " + error.message);
-                        }
+                        alert("Erro detalhado: " + error.message);
                         imagemCard.style.opacity = "1";
                     }
 

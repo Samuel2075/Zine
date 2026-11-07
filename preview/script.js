@@ -1,53 +1,51 @@
+import { db } from "../config/firebase-config.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
 document.addEventListener("DOMContentLoaded", async function () {
     const urlParams = new URLSearchParams(window.location.search);
-    const folderId = urlParams.get("folderId");
-    const zineName = urlParams.get("name") ? decodeURIComponent(urlParams.get("name")) : "Visualização do Zine";
+    const zineId = urlParams.get("id"); // Agora buscamos diretamente pelo ID do documento no Firestore
 
-    const titleEl = document.getElementById("zineTitle");
-    if (titleEl) titleEl.textContent = zineName;
-
-    const accessToken = sessionStorage.getItem("google_access_token");
     const magazineContainer = document.getElementById("magazineContainer");
     const navElement = document.getElementById("pageNav") || document.querySelector('.carousel__nav');
+    const titleEl = document.getElementById("zineTitle");
 
-    if (!folderId || !accessToken) {
-        magazineContainer.innerHTML = `<p style="color: #ff6b6b; text-align: center; width: 100%; margin-top: 50px;">Sessão expirada ou pasta do Zine não encontrada.</p>`;
+    if (!zineId) {
+        magazineContainer.innerHTML = `<p style="color: #ff6b6b; text-align: center; width: 100%; margin-top: 50px;">Zine não encontrado.</p>`;
         return;
     }
 
     try {
-        console.log("A consultar arquivos na pasta do Drive com ID:", folderId);
+        // Busca os dados do zine diretamente no Firestore
+        const docRef = doc(db, "zines", zineId);
+        const docSnap = await getDoc(docRef);
 
-        // Busca os arquivos na pasta do Google Drive com suporte a drives compartilhados e externos
-        const res = await fetch(`https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+trashed=false&orderBy=createdTime&supportsAllDrives=true&includeItemsFromAllDrives=true`, {
-            headers: { 'Authorization': `Bearer ${accessToken}` }
-        });
-        
-        const data = await res.json();
-        console.log("Resposta da API do Drive:", data);
-
-        if (!data.files || data.files.length === 0) {
-            magazineContainer.innerHTML = `<p style="color: #f39c12; text-align: center; width: 100%; margin-top: 50px;">Nenhuma página encontrada neste Zine (Pasta vazia ou sem permissão de leitura).</p>`;
+        if (!docSnap.exists()) {
+            magazineContainer.innerHTML = `<p style="color: #ff6b6b; text-align: center; width: 100%; margin-top: 50px;">Zine não existe no sistema.</p>`;
             return;
         }
 
-        const files = data.files;
+        const zineData = docSnap.data();
+        if (titleEl) titleEl.textContent = zineData.nomeZine;
 
-        // Remove itens antigos do carrossel se houver, mantendo a navegação
+        const paginas = zineData.paginas || [];
+
+        if (paginas.length === 0) {
+            magazineContainer.innerHTML = `<p style="color: #f39c12; text-align: center; width: 100%; margin-top: 50px;">Nenhuma página encontrada neste Zine.</p>`;
+            return;
+        }
+
         const oldItems = magazineContainer.querySelectorAll('.carousel-item');
         oldItems.forEach(item => item.remove());
 
-        // Cria os blocos de páginas duplas dinamicamente com base no template
-        for (let i = 0; i < files.length; i += 2) {
+        // Cria os blocos de páginas duplas com base nos links guardados
+        for (let i = 0; i < paginas.length; i += 2) {
             const pageNumLeft = i + 1;
-            const fileLeft = files[i];
-            const urlLeft = `https://lh3.googleusercontent.com/d/${fileLeft.id}`;
+            const urlLeft = paginas[i] || "../assets/imgNotFound.jpg";
 
             let rightArticleHtml = '';
-            if (i + 1 < files.length) {
+            if (i + 1 < paginas.length && paginas[i + 1]) {
                 const pageNumRight = i + 2;
-                const fileRight = files[i + 1];
-                const urlRight = `https://lh3.googleusercontent.com/d/${fileRight.id}`;
+                const urlRight = paginas[i + 1];
                 rightArticleHtml = `
                     <article class="rightPage page" style="background-image: url('${urlRight}');">
                         <span class="pagenumber">${pageNumRight}</span>
@@ -84,7 +82,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             }
         }
 
-        // Lógica de navegação do carrossel
+        // Navegação do carrossel
         const items = document.querySelectorAll('.carousel-item');
         const total = items.length;
         let current = 0;
@@ -118,7 +116,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
 
     } catch (error) {
-        console.error("Erro ao carregar páginas do Drive:", error);
-        magazineContainer.innerHTML = `<p style="color: #ff6b6b; text-align: center; width: 100%; margin-top: 50px;">Erro ao carregar as páginas do Zine.</p>`;
+        console.error("Erro ao carregar o Zine do Firestore:", error);
+        magazineContainer.innerHTML = `<p style="color: #ff6b6b; text-align: center; width: 100%; margin-top: 50px;">Erro ao carregar as páginas.</p>`;
     }
 });

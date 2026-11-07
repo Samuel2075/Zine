@@ -120,38 +120,26 @@ document.addEventListener("DOMContentLoaded", function () {
                 return;
             }
 
-            const accessToken = sessionStorage.getItem("google_access_token");
-
             for (const docSnap of querySnapshot.docs) {
                 const zine = docSnap.data();
                 const isDono = zine.userEmail === userEmailLogado;
 
+                // Pega a primeira imagem diretamente do array salvo no Firestore
                 let primeiraImagemUrl = "assets/imgNotFound.jpg";
-                if (zine.pastaDriveId && accessToken) {
-                    try {
-                        // Adicionamos ?supportsAllDrives=true e o token para buscar a primeira imagem
-                        const res = await fetch(`https://www.googleapis.com/drive/v3/files?q='${zine.pastaDriveId}'+in+parents+and+trashed=false&pageSize=1&orderBy=createdTime`, {
-                            headers: { 'Authorization': `Bearer ${accessToken}` }
-                        });
-                        const data = await res.json();
-                        if (data.files && data.files.length > 0) {
-                            primeiraImagemUrl = `https://lh3.googleusercontent.com/d/${data.files[0].id}`;
-                        }
-                    } catch (e) {
-                        console.error("Erro ao buscar imagem do Drive para o zine:", e);
-                    }
+                if (zine.paginas && zine.paginas.length > 0 && zine.paginas[0]) {
+                    primeiraImagemUrl = zine.paginas[0];
                 }
 
                 const col = document.createElement("div");
                 col.className = "col-md-4 mb-4";
 
                 let botoesAcao = `
-                    <a href="preview/index.html?folderId=${zine.pastaDriveId}&name=${encodeURIComponent(zine.nomeZine)}" class="btn btn-sm btn-outline-primary w-100 mb-1">Visualizar</a>
+                    <a href="preview/index.html?id=${zine.id}" class="btn btn-sm btn-outline-primary w-100 mb-1">Visualizar</a>
                 `;
 
                 if (isDono) {
                     botoesAcao = `
-                        <a href="preview/index.html?folderId=${zine.pastaDriveId}&name=${encodeURIComponent(zine.nomeZine)}" class="btn btn-sm btn-outline-primary w-100 mb-1">Visualizar</a>
+                        <a href="preview/index.html?id=${zine.id}" class="btn btn-sm btn-outline-primary w-100 mb-1">Visualizar</a>
                         <a href="createZine/index.htm?edit=${zine.id}" class="btn btn-sm btn-outline-secondary w-100 mb-1">Editar</a>
                         <button class="btn btn-sm btn-outline-danger w-100 btn-excluir" data-id="${zine.id}">Excluir</button>
                     `;
