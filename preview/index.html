@@ -4,23 +4,68 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visualização do Zine</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="top-bar" style="position: fixed; top: 10px; left: 20px; z-index: 10;">
-        <a href="../index.html" style="color: #fff; text-decoration: none; background: #222; padding: 8px 15px; border-radius: 4px; font-size: 14px;">← Voltar ao Início</a>
-        <span id="zineTitle" style="color: #fff; margin-left: 20px; font-weight: bold; font-size: 18px;">Carregando Zine...</span>
+    <!-- Barra Superior Fixa (Isolada, não mexe no layout central) -->
+    <div class="top-bar">
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <a href="../index.html" class="btn-voltar">← Voltar ao Início</a>
+            <button id="btnAbrirComentario" class="btn btn-sm btn-outline-light">💬 Comentar Página</button>
+        </div>
+        <div>
+            <span id="zineTitle">Carregando Zine...</span>
+        </div>
     </div>
 
-    <section id="magazineContainer" class="magazine carousel">
-        
-        <div class="pageNav carousel__nav">
-            <span id="moveLeft" class="carousel__arrow">&#10094;</span>
-            <span id="moveRight" class="carousel__arrow">&#10095;</span>
-        </div>
+    <!-- Container do Preview do Livro -->
+    <section id="bookContainer">
+        <!-- Injetado dinamicamente via JS -->
     </section>
 
+    <!-- Navegação do Carrossel -->
+    <div class="carousel__nav">
+        <span class="carousel__arrow" id="prevBtn">&#10094;</span>
+        <span class="carousel__arrow" id="nextBtn">&#10095;</span>
+    </div>
+
+    <!-- Container Flutuante para exibir o comentário da página atual -->
+    <div id="comentarioAtualContainer" class="position-fixed bottom-0 start-50 translate-middle-x mb-5 p-3 bg-dark bg-opacity-75 text-white rounded shadow-sm small d-none" style="z-index: 5; max-width: 600px; width: 90%;">
+        <!-- Renderizado dinamicamente -->
+    </div>
+
+    <!-- Modal de Comentários -->
+    <div class="modal fade" id="modalComentario" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-dark text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">Deixar Comentário na Página</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body position-relative">
+                    <div id="seletorPaginaContainer" class="mb-3 d-none">
+                        <label class="form-label">Esta é uma página dupla. Em qual página deseja comentar?</label>
+                        <select id="selectPaginaAlvo" class="form-select bg-secondary text-white border-0">
+                            <!-- Preenchido via JS -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="txtComentario" class="form-label">Seu Comentário (digite @ para citar um zine):</label>
+                        <textarea id="txtComentario" class="form-control bg-secondary text-white border-0" rows="4" placeholder="Escreva aqui... Use @ para mencionar um zine."></textarea>
+                        <div id="sugestoesMentions" class="list-group position-absolute shadow w-100 d-none" style="z-index: 1050; max-height: 150px; overflow-y: auto;"></div>
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="btnSalvarComentario" class="btn btn-primary btn-sm">Salvar Comentário</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="script.js"></script>
 </body>
 </html>

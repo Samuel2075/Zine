@@ -1,6 +1,6 @@
 import { salvarOuAtualizarUsuarioGoogle, buscarUsuarioPorId } from "./config/usuario-repository.js";
 import { db } from "./config/firebase-config.js";
-import { collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, getDocs, deleteDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const CLIENT_ID = "334263251975-0ov5qpk3lo495j9e65hjhjqbto700ihn.apps.googleusercontent.com";
 let tokenClient = null;
@@ -15,12 +15,14 @@ document.addEventListener("DOMContentLoaded", function () {
     const meusZinesContainer = document.getElementById("meusZinesContainer");
     const zinesPublicadosContainer = document.getElementById("zinesPublicadosContainer");
 
-    // Instância do Modal do Bootstrap para Confirmação de Exclusão
     const modalElement = document.getElementById('modalConfirmacao');
     const modalBootstrap = window.bootstrap ? new bootstrap.Modal(modalElement) : null;
     let zineIdParaExcluir = null;
 
-    // Função de Notificação Flutuante Personalizada
+    const modalVerComentariosEl = document.getElementById("modalVerComentarios");
+    const modalVerComentarios = window.bootstrap ? new bootstrap.Modal(modalVerComentariosEl) : null;
+    const listaComentariosModalBody = document.getElementById("listaComentariosModalBody");
+
     function mostrarNotificacao(mensagem, tipo = "success") {
         const toastContainer = document.getElementById("toastContainer");
         if (!toastContainer) return;
@@ -49,15 +51,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email',
                 callback: async (response) => {
                     if (response.error) {
-                        console.error("Erro na autenticação:", response);
                         mostrarNotificacao("Falha na autenticação com o Google.", "error");
                         return;
                     }
-
                     const accessToken = response.access_token;
                     sessionStorage.setItem("google_access_token", accessToken);
                     sessionStorage.setItem("token_expiration", Date.now() + 3600000);
-
                     await processarLoginGoogle(accessToken);
                 },
             });
@@ -96,15 +95,7 @@ document.addEventListener("DOMContentLoaded", function () {
             const userInfo = await res.json();
 
             let usuarioFirestore = await buscarUsuarioPorId(userInfo.email);
-            let nicknameFinal = "";
-
-            if (usuarioFirestore && usuarioFirestore.nickname) {
-                nicknameFinal = usuarioFirestore.nickname;
-            } else {
-                nicknameFinal = prompt("Escolha o seu Nickname para o sistema:", userInfo.name || "Usuário");
-                if (!nicknameFinal) nicknameFinal = userInfo.name || "Usuário";
-            }
-
+            let nicknameFinal = usuarioFirestore?.nickname || prompt("Escolha o seu Nickname para o sistema:", userInfo.name || "Usuário") || userInfo.name || "Usuário";
             const avatarFinal = userInfo.picture || "assets/imgNotFound.jpg";
 
             await salvarOuAtualizarUsuarioGoogle(userInfo.email, {
@@ -120,7 +111,7 @@ document.addEventListener("DOMContentLoaded", function () {
             mostrarNotificacao("Login efetuado com sucesso!");
             atualizarInterfacePerfil();
         } catch (error) {
-            console.error("Erro ao processar login do Google:", error);
+            console.error("Erro no login:", error);
             mostrarNotificacao("Erro ao processar os dados do utilizador.", "error");
         }
     }
@@ -128,7 +119,6 @@ document.addEventListener("DOMContentLoaded", function () {
     function verificarSessaoAtiva() {
         const token = sessionStorage.getItem("google_access_token");
         const expiration = sessionStorage.getItem("token_expiration");
-
         if (token && expiration && Date.now() < parseInt(expiration)) {
             atualizarInterfacePerfil();
         } else {
@@ -188,6 +178,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 <div class="d-grid gap-1">
                                     <a href="preview/index.html?id=${zine.id}" class="btn btn-sm btn-outline-primary w-100 mb-1">Visualizar</a>
                                     <a href="createZine/index.htm?edit=${zine.id}" class="btn btn-sm btn-outline-secondary w-100 mb-1">Editar / Publicar</a>
+                                    <button class="btn btn-sm btn-outline-info w-100 mb-1 btn-ver-comentarios" data-id="${zine.id}">Ver Comentários</button>
                                     <button class="btn btn-sm btn-outline-danger w-100 btn-excluir" data-id="${zine.id}">Excluir</button>
                                 </div>
                             </div>
@@ -212,6 +203,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 </div>
                                 <div class="d-grid gap-1">
                                     <a href="preview/index.html?id=${zine.id}" class="btn btn-sm btn-primary w-100 mb-1">Visualizar Zine</a>
+                                    <button class="btn btn-sm btn-outline-info w-100 btn-ver-comentarios" data-id="${zine.id}">Ver Comentários</button>
                                 </div>
                             </div>
                         </div>
@@ -220,20 +212,46 @@ document.addEventListener("DOMContentLoaded", function () {
                 }
             });
 
-            if (countMeus === 0) {
-                meusZinesContainer.innerHTML = "<p class='text-muted'>Você ainda não criou nenhum zine.</p>";
-            }
+            if (countMeus === 0) meusZinesContainer.innerHTML = "<p class='text-muted'>Você ainda não criou nenhum zine.</p>";
+            if (countPublicos === 0) zinesPublicadosContainer.innerHTML = "<p class='text-muted'>Nenhum zine publicado no momento.</p>";
 
-            if (countPublicos === 0) {
-                zinesPublicadosContainer.innerHTML = "<p class='text-muted'>Nenhum zine publicado no momento.</p>";
-            }
-
-            // Acionar abertura do Modal customizado ao clicar em excluir
+            // Evento para abrir modal de exclusão
             document.querySelectorAll(".btn-excluir").forEach(btn => {
                 btn.addEventListener("click", function () {
                     zineIdParaExcluir = this.getAttribute("data-id");
-                    if (modalBootstrap) {
-                        modalBootstrap.show();
+                    if (modalBootstrap) modalBootstrap.show();
+                });
+            });
+
+            // Evento para abrir modal de comentários
+            document.querySelectorAll(".btn-ver-comentarios").forEach(btn => {
+                btn.addEventListener("click", async function() {
+                    const zineId = this.getAttribute("data-id");
+                    try {
+                        const docSnap = await getDoc(doc(db, "zines", zineId));
+                        if (docSnap.exists()) {
+                            const data = docSnap.data();
+                            listaComentariosModalBody.innerHTML = "";
+
+                            if (data.comentarios && Object.keys(data.comentarios).length > 0) {
+                                for (const [pagIdx, com] of Object.entries(data.comentarios)) {
+                                    const div = document.createElement("div");
+                                    div.className = "border-bottom border-secondary pb-2 mb-2";
+                                    div.innerHTML = `
+                                        <span class="badge bg-secondary mb-1">Página ${parseInt(pagIdx) + 1}</span>
+                                        <p class="mb-1 small"><strong>${com.autorNickname}:</strong> ${com.texto}</p>
+                                    `;
+                                    listaComentariosModalBody.appendChild(div);
+                                }
+                            } else {
+                                listaComentariosModalBody.innerHTML = "<p class='text-muted small'>Nenhum comentário neste zine ainda.</p>";
+                            }
+
+                            modalVerComentarios.show();
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        mostrarNotificacao("Erro ao carregar comentários.", "error");
                     }
                 });
             });
@@ -245,7 +263,6 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    // Evento de confirmação de exclusão dentro do Modal
     const btnConfirmarExclusao = document.getElementById("btnConfirmarExclusao");
     if (btnConfirmarExclusao) {
         const novoBtnConfirmar = btnConfirmarExclusao.cloneNode(true);
@@ -253,7 +270,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
         document.getElementById("btnConfirmarExclusao").addEventListener("click", async function () {
             if (!zineIdParaExcluir) return;
-
             const emailLogado = sessionStorage.getItem("user_email");
 
             try {
@@ -289,9 +305,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (avatarEl) {
                 avatarEl.src = sessionStorage.getItem("user_avatar") || "assets/imgNotFound.jpg";
-                avatarEl.onerror = function () {
-                    this.src = "assets/imgNotFound.jpg";
-                };
+                avatarEl.onerror = function () { this.src = "assets/imgNotFound.jpg"; };
             }
 
             carregarZines(email);
