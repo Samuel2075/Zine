@@ -1,9 +1,13 @@
 body {
     font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
     background: #0f0f0f;
-    zoom: 70%;
     margin: 0;
     overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    justify-content: center;
+    align-items: center;
 }
 
 ::selection {
@@ -18,15 +22,17 @@ body {
     display: block;
 }
 
+/* Container do zine proporcional */
 section {
-    top: 80px;
     position: relative;
     overflow: hidden;
-    margin: 2.5% auto;
     display: flex;
-    height: 11in;
-    width: 17.5in;
+    height: 85vh; /* Altura responsiva baseada na tela */
+    width: calc(85vh * (17.5 / 11)); /* Mantém a proporção exata de largura dupla */
+    max-width: 95vw;
     justify-content: center;
+    align-items: center;
+    margin: auto;
 }
 
 .carousel-item {
@@ -40,6 +46,7 @@ section {
     flex-shrink: 0;
 }
 
+/* Estilo para páginas duplas unidas */
 .carousel-item--double {
     justify-content: center;
 }
@@ -48,20 +55,17 @@ article {
     background: #1f1f1f;
     display: block;
     overflow: hidden;
-    height: 11in;
-    width: 8.5in;
-    float: left;
+    height: 100%;
+    width: 50%; /* Cada página ocupa exatamente metade do container mantendo o retângulo */
     margin: 0;
     position: relative;
-    
     box-shadow: none;
-    
     background-position: center;
     background-repeat: no-repeat;
-    
     background-size: cover; 
 }
 
+/* Remove qualquer espaçamento entre a página esquerda e a direita */
 .leftPage {
     margin-right: 0 !important;
     border-right: none !important;
@@ -72,9 +76,10 @@ article {
     border-left: none !important;
 }
 
+/* Página única centralizada (Capa e Contracapa - retângulo perfeito) */
 .singlePage {
-    width: 8.5in;
-    height: 11in;
+    width: 50%; /* Mantém a mesma largura proporcional de uma página solta */
+    height: 100%;
     margin: 0 auto;
 }
 
@@ -82,67 +87,69 @@ article {
     left: 0;
     float: left;
     border-right: 1px inset rgba(255, 255, 255, 0.25);
-    border-top-right-radius: 0.1875in;
+    border-top-right-radius: 6px;
 }
 
 .rightPage span.pagenumber {
     right: 0;
     float: right;
     border-left: 1px inset rgba(255, 255, 255, 0.25);
-    border-top-left-radius: 0.1875in;
+    border-top-left-radius: 6px;
 }
 
 .singlePage span.pagenumber {
     right: 0;
     left: auto;
     border-left: 1px inset rgba(255, 255, 255, 0.25);
-    border-top-left-radius: 0.1875in;
+    border-top-left-radius: 6px;
 }
 
 span.pagenumber {
     vertical-align: middle;
     bottom: 0;
     text-align: center;
-    font-size: 0.25in;
+    font-size: 14px;
     font-weight: 800;
     position: absolute;
-    width: 0.5in;
-    height: 0.5in;
-    line-height: 0.5in;
+    width: 35px;
+    height: 35px;
+    line-height: 35px;
     color: #fff;
     background: #0f0f0f;
     border-top: 1px inset rgba(255, 255, 255, 0.25);
 }
 
+/* Navegação centralizada na parte inferior */
 .carousel__nav {
-    width: 80px;
     position: fixed;
-    margin: 0 -39px;
     left: 50%;
+    transform: translateX(-50%);
     z-index: 10;
-    background-color: transparent;
-    bottom: 5%;
+    background-color: #0f0f0f;
+    bottom: 20px;
     text-align: center;
     border: 1px inset #fff;
+    display: flex;
+    border-radius: 4px;
 }
 
 .carousel__arrow {
     cursor: pointer;
     display: inline-block;
-    padding: 11px 14px;
+    padding: 8px 14px;
     position: relative;
     color: #fff;
 }
 
 .carousel__arrow:nth-child(1):after {
     content: '';
-    right: -3px;
+    right: 0;
     position: absolute;
     width: 1px;
     background-color: #fff;
     height: 14px;
     top: 50%;
-    margin-top: -7px;
+    transform: translateY(-50%);
 }
 
 .active {
