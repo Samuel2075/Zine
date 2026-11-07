@@ -2,7 +2,7 @@ import { salvarOuAtualizarUsuarioGoogle, buscarUsuarioPorId } from "./config/usu
 import { db } from "./config/firebase-config.js";
 import { collection, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-const CLIENT_ID = "334263251975-0ov5qpk3lo495j9e65hjhjqbto700ihn.apps.googleusercontent.com"; 
+const CLIENT_ID = "334263251975-0ov5qpk3lo495j9e65hjhjqbto700ihn.apps.googleusercontent.com";
 let tokenClient = null;
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         alert("Falha na autenticação com o Google.");
                         return;
                     }
-                    
+
                     const accessToken = response.access_token;
                     sessionStorage.setItem("google_access_token", accessToken);
                     sessionStorage.setItem("token_expiration", Date.now() + 3600000);
@@ -126,10 +126,10 @@ document.addEventListener("DOMContentLoaded", function () {
                 const zine = docSnap.data();
                 const isDono = zine.userEmail === userEmailLogado;
 
-                // Busca a primeira imagem da pasta do Drive associada ao Zine
                 let primeiraImagemUrl = "assets/imgNotFound.jpg";
                 if (zine.pastaDriveId && accessToken) {
                     try {
+                        // Adicionamos ?supportsAllDrives=true e o token para buscar a primeira imagem
                         const res = await fetch(`https://www.googleapis.com/drive/v3/files?q='${zine.pastaDriveId}'+in+parents+and+trashed=false&pageSize=1&orderBy=createdTime`, {
                             headers: { 'Authorization': `Bearer ${accessToken}` }
                         });
@@ -174,9 +174,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 zinesContainer.appendChild(col);
             }
 
-            // Eventos para botões de exclusão
             document.querySelectorAll(".btn-excluir").forEach(btn => {
-                btn.addEventListener("click", async function() {
+                btn.addEventListener("click", async function () {
                     const zineId = this.getAttribute("data-id");
                     if (confirm("Tem certeza que deseja excluir este zine?")) {
                         try {
@@ -212,10 +211,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (nickEl) nickEl.textContent = nickname;
             if (emailEl) emailEl.textContent = email;
-            
+
             if (avatarEl) {
                 avatarEl.src = sessionStorage.getItem("user_avatar") || "assets/imgNotFound.jpg";
-                avatarEl.onerror = function() {
+                avatarEl.onerror = function () {
                     this.src = "assets/imgNotFound.jpg";
                 };
             }

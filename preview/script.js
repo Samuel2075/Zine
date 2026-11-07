@@ -3,7 +3,8 @@ document.addEventListener("DOMContentLoaded", async function () {
     const folderId = urlParams.get("folderId");
     const zineName = urlParams.get("name") ? decodeURIComponent(urlParams.get("name")) : "Visualização do Zine";
 
-    document.getElementById("zineTitle").textContent = zineName;
+    const titleEl = document.getElementById("zineTitle");
+    if (titleEl) titleEl.textContent = zineName;
 
     const accessToken = sessionStorage.getItem("google_access_token");
     const magazineContainer = document.getElementById("magazineContainer");
@@ -49,7 +50,6 @@ document.addEventListener("DOMContentLoaded", async function () {
                     </article>
                 `;
             } else {
-                // Se for página ímpar final, cria uma página direita vazia ou neutra
                 rightArticleHtml = `
                     <article class="rightPage page" style="background: #1f1f1f;">
                         <span class="pagenumber">${i + 2}</span>
@@ -59,8 +59,13 @@ document.addEventListener("DOMContentLoaded", async function () {
 
             const itemIndex = (i / 2) + 1;
             const carouselItemDiv = document.createElement("div");
-            carouselItemDiv.className = `carousel-item carousel-item--${itemIndex}`;
-            if (itemIndex === 1) carouselItemDiv.classList.add('active');
+            
+            // Adiciona a classe active logo no primeiro par para ele aparecer visível de imediato
+            if (itemIndex === 1) {
+                carouselItemDiv.className = `carousel-item carousel-item--${itemIndex} active`;
+            } else {
+                carouselItemDiv.className = `carousel-item carousel-item--${itemIndex}`;
+            }
 
             carouselItemDiv.innerHTML = `
                 <article class="leftPage page" style="background-image: url('${urlLeft}');">
@@ -69,8 +74,11 @@ document.addEventListener("DOMContentLoaded", async function () {
                 ${rightArticleHtml}
             `;
 
-            // Insere o item antes da barra de navegação
-            magazineContainer.insertBefore(carouselItemDiv, navElement);
+            if (navElement) {
+                magazineContainer.insertBefore(carouselItemDiv, navElement);
+            } else {
+                magazineContainer.appendChild(carouselItemDiv);
+            }
         }
 
         // Lógica de navegação do carrossel

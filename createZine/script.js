@@ -111,7 +111,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         const folderData = await response.json();
         pastaDriveId = folderData.id;
 
-        // NOVO: Torna a pasta legível publicamente para que outros usuários consigam ler as imagens dela
+        // TORNA A PASTA PÚBLICA PARA LEITURA (Essencial para outros utilizadores verem)
         await fetch(`https://www.googleapis.com/drive/v3/files/${pastaDriveId}/permissions`, {
             method: 'POST',
             headers: new Headers({
