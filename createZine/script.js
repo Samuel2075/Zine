@@ -16,12 +16,12 @@ document.addEventListener("DOMContentLoaded", async function () {
     if (!accessToken || !tokenExpiration || Date.now() >= parseInt(tokenExpiration) || !userEmail) {
         alert("Sua sessão expirou ou você não está logado.");
         sessionStorage.clear();
-        window.location.href = "../index.html"; 
+        window.location.href = "../index.html";
         return;
     }
 
     const userId = userEmail.replace(/[.#$[\]]/g, "_");
-    let pastaDriveId = null; 
+    let pastaDriveId = null;
     let zineIdFinal = "";
 
     // Verifica se há um Zine sendo editado via URL
@@ -110,6 +110,20 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         const folderData = await response.json();
         pastaDriveId = folderData.id;
+
+        // NOVO: Torna a pasta legível publicamente para que outros usuários consigam ler as imagens dela
+        await fetch(`https://www.googleapis.com/drive/v3/files/${pastaDriveId}/permissions`, {
+            method: 'POST',
+            headers: new Headers({
+                'Authorization': 'Bearer ' + accessToken,
+                'Content-Type': 'application/json'
+            }),
+            body: JSON.stringify({
+                role: 'reader',
+                type: 'anyone'
+            })
+        });
+
         return pastaDriveId;
     }
 
@@ -150,7 +164,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await res.json();
-                
+
                 if (data.files && data.files.length > 0) {
                     data.files.forEach((file, index) => {
                         const cardIndex = index + 1;
@@ -183,7 +197,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                     const idCard = input.id.split("-")[1];
                     const card = input.closest(".card");
                     const imagemCard = card.querySelector(".card-img-top");
-                    
+
                     imagemCard.style.opacity = "0.4";
 
                     try {
@@ -196,7 +210,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                         if (!zineIdFinal) {
                             zineIdFinal = `${userId}_${zineNameInput.value.replace(/\s+/g, '_')}`;
                         }
-                        
+
                         const zineRef = doc(db, "zines", zineIdFinal);
 
                         const zineData = {
@@ -214,7 +228,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
                     } catch (error) {
                         console.error("Erro detalhado no processo:", error);
-                        
+
                         if (error.message && (error.message.includes("401") || error.message.includes("Unauthorized"))) {
                             sessionStorage.clear();
                             alert("Sua sessão expirou. Por favor, faça login novamente.");
