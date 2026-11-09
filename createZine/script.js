@@ -8,13 +8,13 @@ document.addEventListener("DOMContentLoaded", async function () {
     const zineNameInput = document.getElementById("zineName");
     const btnLogout = document.getElementById("btnLogout");
     const btnPublicar = document.getElementById("btnPublicar");
+    const btnVisualizar = document.getElementById("btnVisualizar");
     const btnVoltarIncio = document.querySelector("a[href='../index.html']");
 
     const accessToken = localStorage.getItem("google_access_token");
     const tokenExpiration = localStorage.getItem("token_expiration");
     const userEmail = localStorage.getItem("user_email");
 
-    // Função de Notificação Personalizada
     function mostrarNotificacao(mensagem, tipo = "success") {
         const toastContainer = document.getElementById("toastContainer");
         if (!toastContainer) return;
@@ -45,10 +45,16 @@ document.addEventListener("DOMContentLoaded", async function () {
     let pastaDriveId = null; 
     let zineIdFinal = "";
     let paginasUrls = [];
-    let publicadoState = false; // Padrão: rascunho
+    let publicadoState = false;
 
     const urlParams = new URLSearchParams(window.location.search);
-    const zineEditId = urlParams.get("edit");
+    let zineEditId = urlParams.get("edit");
+
+    if (zineEditId) {
+        sessionStorage.setItem("current_editing_zine_id", zineEditId);
+    } else {
+        zineEditId = sessionStorage.getItem("current_editing_zine_id");
+    }
 
     if (zineEditId) {
         try {
@@ -58,20 +64,23 @@ document.addEventListener("DOMContentLoaded", async function () {
                 const zineData = docSnap.data();
                 zineNameInput.value = zineData.nomeZine;
                 pastaDriveId = zineData.pastaDriveId;
-                templateSelect.value = zineData.templateQuantidade || "8";
+                templateSelect.value = zineData.templateQuantidade || "";
                 zineIdFinal = zineData.id;
                 paginasUrls = zineData.paginas || [];
                 publicadoState = zineData.publicado || false;
 
-                atualizarVisualBotaoPublicar();
-                btnPublicar.style.display = "inline-block";
-
-                await renderizarCardsEImagens(parseInt(zineData.templateQuantidade), paginasUrls);
+                atualizarVisualBotoesAcao();
+                
+                if (zineData.templateQuantidade) {
+                    await renderizarCardsEImagens(parseInt(zineData.templateQuantidade), paginasUrls);
+                }
             }
         } catch (error) {
             console.error("Erro ao carregar zine para edição:", error);
         }
-    } else {
+    } 
+    
+    if (!zineIdFinal && !urlParams.get("edit")) {
         async function sugerirNomeZine() {
             try {
                 const q = query(collection(db, "zines"), where("userId", "==", userId));
@@ -87,12 +96,15 @@ document.addEventListener("DOMContentLoaded", async function () {
         await sugerirNomeZine();
     }
 
-    // Função centralizada para salvar o estado atual do Zine no Firestore
     async function salvarZineNoFirestore() {
         if (!zineNameInput.value.trim()) return;
 
         if (!zineIdFinal) {
             zineIdFinal = `${userId}_${zineNameInput.value.trim().replace(/\s+/g, '_')}`;
+            sessionStorage.setItem("current_editing_zine_id", zineIdFinal);
+            
+            const novaUrl = `${window.location.pathname}?edit=${zineIdFinal}`;
+            window.history.replaceState({ path: novaUrl }, '', novaUrl);
         }
 
         const zineRef = doc(db, "zines", zineIdFinal);
@@ -102,7 +114,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             userEmail: userEmail,
             nomeZine: zineNameInput.value.trim(),
             pastaDriveId: pastaDriveId || "",
-            templateQuantidade: templateSelect.value || "8",
+            templateQuantidade: templateSelect.value || "",
             paginas: paginasUrls,
             publicado: publicadoState,
             atualizadoEm: new Date().toISOString()
@@ -110,13 +122,14 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         try {
             await setDoc(zineRef, zineData, { merge: true });
+            atualizarVisualBotoesAcao();
         } catch (error) {
             console.error("Erro ao salvar zine automaticamente:", error);
         }
     }
 
-    // Salva automaticamente ao alterar o nome ou o template
     zineNameInput.addEventListener("blur", salvarZineNoFirestore);
+    
     templateSelect.addEventListener("change", async function () {
         const quantidade = parseInt(this.value);
         if (!isNaN(quantidade)) {
@@ -125,16 +138,35 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
     });
 
-    // Intercepta o botão "Voltar ao Início" para garantir o salvamento antes de sair
+    if (btnVisualizar) {
+        btnVisualizar.addEventListener("click", async function () {
+            await salvarZineNoFirestore();
+            if (zineIdFinal) {
+                window.location.href = `../preview/index.html?id=${zineIdFinal}&origin=create`;
+            } else {
+                mostrarNotificacao("Preencha o nome e selecione um template para visualizar.", "error");
+            }
+        });
+    }
+
     if (btnVoltarIncio) {
         btnVoltarIncio.addEventListener("click", async function (e) {
             e.preventDefault();
             await salvarZineNoFirestore();
+            sessionStorage.removeItem("current_editing_zine_id");
             window.location.href = "../index.html";
         });
     }
 
-    function atualizarVisualBotaoPublicar() {
+    function atualizarVisualBotoesAcao() {
+        if (zineIdFinal && templateSelect.value) {
+            btnVisualizar.style.display = "inline-block";
+            btnPublicar.style.display = "inline-block";
+        } else {
+            btnVisualizar.style.display = "none";
+            btnPublicar.style.display = "none";
+        }
+
         if (publicadoState) {
             btnPublicar.textContent = "Despublicar Zine";
             btnPublicar.className = "btn btn-danger btn-sm";
@@ -148,7 +180,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         btnPublicar.addEventListener("click", async () => {
             await salvarZineNoFirestore();
             publicadoState = !publicadoState;
-            atualizarVisualBotaoPublicar();
+            atualizarVisualBotoesAcao();
 
             try {
                 const zineRef = doc(db, "zines", zineIdFinal);
@@ -168,6 +200,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     if (btnLogout) {
         btnLogout.addEventListener("click", async () => {
             await salvarZineNoFirestore();
+            sessionStorage.removeItem("current_editing_zine_id");
             localStorage.clear();
             window.location.href = "../index.html";
         });
@@ -234,11 +267,20 @@ document.addEventListener("DOMContentLoaded", async function () {
             const indexArr = i - 1;
             const imagemAtual = (urlsSalvas && urlsSalvas[indexArr]) ? urlsSalvas[indexArr] : "../assets/imgNotFound.jpg";
 
+            let tituloCapa = "";
+            if (i === 1) {
+                tituloCapa = "Capa";
+            } else if (i === quantidade) {
+                tituloCapa = "Contracapa";
+            } else {
+                tituloCapa = `Imagem ${i - 1}`;
+            }
+
             colDiv.innerHTML = `
                 <div class="card zine-upload-card shadow-sm h-100">
-                    <img class="card-img-top card-img-${i}" src="${imagemAtual}" alt="Capa ${i}" style="height: 180px; object-fit: cover; border-bottom: 1px solid #262626;" onerror="this.src='../assets/imgNotFound.jpg'">
+                    <img class="card-img-top card-img-${i}" src="${imagemAtual}" alt="${tituloCapa}" style="height: 180px; object-fit: cover; border-bottom: 1px solid #262626;" onerror="this.src='../assets/imgNotFound.jpg'">
                     <div class="card-body text-center d-flex flex-column justify-content-between">
-                        <h6 class="card-title text-light fw-bold">Capa ${i}</h6>
+                        <h6 class="card-title text-light fw-bold">${tituloCapa}</h6>
                         <input type="file" id="fileInput-${i}" class="d-none" accept="image/jpeg, image/png">
                         <button type="button" class="btn btn-sm btn-dark-custom w-100 mt-2 btn-upload" data-id="${i}">Selecionar Imagem</button>
                     </div>
@@ -248,6 +290,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
 
         ativarEventosUpload();
+        atualizarVisualBotoesAcao();
     }
 
     function ativarEventosUpload() {
@@ -280,7 +323,6 @@ document.addEventListener("DOMContentLoaded", async function () {
                         paginasUrls[idCard - 1] = downloadURL;
 
                         await salvarZineNoFirestore();
-                        btnPublicar.style.display = "inline-block";
 
                     } catch (error) {
                         console.error("Erro detalhado no processo:", error);

@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const btnGoogleLogin = document.getElementById("btnGoogleLogin");
     const btnLogout = document.getElementById("btnLogout");
     const listaZinesSection = document.getElementById("listaZinesSection");
-
+    
     const meusZinesContainer = document.getElementById("meusZinesContainer");
     const zinesPublicadosContainer = document.getElementById("zinesPublicadosContainer");
 
@@ -135,7 +135,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         try {
             const querySnapshot = await getDocs(collection(db, "zines"));
-
+            
             meusZinesContainer.innerHTML = "";
             zinesPublicadosContainer.innerHTML = "";
 
@@ -162,6 +162,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     const colMeus = document.createElement("div");
                     colMeus.className = "col-md-4 mb-4";
 
+                    // Badges com cores contrastantes e legíveis
                     const badgeStatus = zine.publicado 
                         ? '<span class="badge border mb-2 px-2 py-1" style="background-color: #15803d; color: #ffffff !important; border-color: #22c55e !important; font-size: 0.75rem; font-weight: 600;">Publicado</span>' 
                         : '<span class="badge border mb-2 px-2 py-1" style="background-color: #374151; color: #ffffff !important; border-color: #6b7280 !important; font-size: 0.75rem; font-weight: 600;">Rascunho</span>';
@@ -176,8 +177,8 @@ document.addEventListener("DOMContentLoaded", function () {
                                     <p class="card-text text-secondary small mb-3">Autor: Você</p>
                                 </div>
                                 <div class="d-grid gap-2">
-                                    <a href="preview/index.html?id=${zine.id}" class="btn btn-sm btn-dark-custom w-100">Visualizar</a>
-                                    <a href="createZine/index.htm?edit=${zine.id}" class="btn btn-sm btn-dark-custom w-100">Editar / Publicar</a>
+                                    <a href="preview/index.html?id=${zine.id}&origin=home" class="btn btn-sm btn-dark-custom w-100">Visualizar</a>
+                                    <a href="createZine/index.html?edit=${zine.id}" class="btn btn-sm btn-dark-custom w-100">Editar / Publicar</a>
                                     <button class="btn btn-sm btn-dark-custom w-100 btn-ver-comentarios" data-id="${zine.id}">Ver Comentários</button>
                                     <button class="btn btn-sm btn-outline-danger w-100 btn-excluir mt-1" data-id="${zine.id}">Excluir</button>
                                 </div>
@@ -201,7 +202,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                     <p class="card-text text-secondary small mb-3">Autor: ${zine.userEmail}</p>
                                 </div>
                                 <div class="d-grid gap-2">
-                                    <a href="preview/index.html?id=${zine.id}" class="btn btn-sm btn-accent w-100">Visualizar Zine</a>
+                                    <a href="preview/index.html?id=${zine.id}&origin=home" class="btn btn-sm btn-accent w-100">Visualizar Zine</a>
                                     <button class="btn btn-sm btn-dark-custom w-100 btn-ver-comentarios" data-id="${zine.id}">Ver Comentários</button>
                                 </div>
                             </div>
@@ -221,9 +222,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 });
             });
 
-            // Listar comentários com design clean, suave e alinhado ao tema do sistema
             document.querySelectorAll(".btn-ver-comentarios").forEach(btn => {
-                btn.addEventListener("click", async function () {
+                btn.addEventListener("click", async function() {
                     const zineId = this.getAttribute("data-id");
                     const emailLogado = localStorage.getItem("user_email");
 
@@ -247,7 +247,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                     if (com.zineCitadoId) {
                                         linkCitacao = `
                                             <div class="mt-2 pt-2 border-top border-dark">
-                                                <a href="preview/index.html?id=${com.zineCitadoId}" target="_blank" rel="noopener noreferrer" class="text-info text-decoration-none small d-inline-flex align-items-center gap-1">
+                                                <a href="/preview/index.html?id=${com.zineCitadoId}" target="_blank" rel="noopener noreferrer" class="text-info text-decoration-none small d-inline-flex align-items-center gap-1">
                                                     🔗 Ver Zine Citado
                                                 </a>
                                             </div>
@@ -287,9 +287,8 @@ document.addEventListener("DOMContentLoaded", function () {
                                     listaComentariosModalBody.appendChild(cardDiv);
                                 }
 
-                                // Evento para disparar o Zoom da Imagem
                                 document.querySelectorAll(".img-comentario-zoom").forEach(imgEl => {
-                                    imgEl.addEventListener("click", function () {
+                                    imgEl.addEventListener("click", function() {
                                         const srcImg = this.getAttribute("data-img");
                                         document.getElementById("imgZoomPreview").src = srcImg;
                                         const modalZoom = new bootstrap.Modal(document.getElementById("modalZoomImagem"));
@@ -297,9 +296,8 @@ document.addEventListener("DOMContentLoaded", function () {
                                     });
                                 });
 
-                                // Evento para o Dono excluir o comentário
                                 document.querySelectorAll(".btn-excluir-comentario").forEach(delBtn => {
-                                    delBtn.addEventListener("click", async function () {
+                                    delBtn.addEventListener("click", async function() {
                                         if (!confirm("Deseja realmente excluir este comentário?")) return;
 
                                         const zId = this.getAttribute("data-zineid");

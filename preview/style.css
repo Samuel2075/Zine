@@ -97,7 +97,7 @@ article {
     position: relative;
     background-position: center;
     background-repeat: no-repeat;
-    background-size: cover;
+    background-size: 100% 100%; /* Alterado de 'cover' para '100% 100%' para encaixar perfeitamente sem margens */
     box-shadow: 0 0 15px rgba(0,0,0,0.5);
 }
 

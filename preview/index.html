@@ -9,13 +9,12 @@
 </head>
 <body>
 
-    <!-- Container para Notificações Personalizadas -->
     <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
 
-    <!-- Barra Superior Fixa -->
     <div class="top-bar">
         <div style="display: flex; align-items: center; gap: 10px;">
-            <button id="btnVoltarIncio" class="btn-voltar" style="cursor: pointer;">← Voltar ao Início</button>
+            <!-- Botão Voltar inteligente baseado na origem -->
+            <button id="btnVoltarIncio" class="btn-voltar" style="cursor: pointer;">← Voltar</button>
             <button id="btnAbrirComentario" class="btn btn-sm btn-outline-light">💬 Comentar Página</button>
         </div>
         <div>
@@ -23,23 +22,15 @@
         </div>
     </div>
 
-    <!-- Container do Preview do Livro -->
-    <section id="bookContainer">
-        <!-- Injetado dinamicamente via JS -->
-    </section>
+    <section id="bookContainer"></section>
 
-    <!-- Navegação do Carrossel -->
     <div class="carousel__nav">
         <span class="carousel__arrow" id="prevBtn">&#10094;</span>
         <span class="carousel__arrow" id="nextBtn">&#10095;</span>
     </div>
 
-    <!-- Container Flutuante para exibir o comentário da página atual -->
-    <div id="comentarioAtualContainer" class="position-fixed bottom-0 start-50 translate-middle-x mb-5 p-3 bg-dark bg-opacity-75 text-white rounded shadow-sm small d-none" style="z-index: 5; max-width: 600px; width: 90%;">
-        <!-- Renderizado dinamicamente -->
-    </div>
+    <div id="comentarioAtualContainer" class="position-fixed bottom-0 start-50 translate-middle-x mb-5 p-3 bg-dark bg-opacity-75 text-white rounded shadow-sm small d-none" style="z-index: 5; max-width: 600px; width: 90%;"></div>
 
-    <!-- Modal de Comentários Avançado -->
     <div class="modal fade" id="modalComentario" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content bg-dark text-white">
@@ -50,12 +41,9 @@
                 <div class="modal-body position-relative">
                     <div id="seletorPaginaContainer" class="mb-3 d-none">
                         <label class="form-label">Esta é uma página dupla. Em qual página deseja comentar?</label>
-                        <select id="selectPaginaAlvo" class="form-select bg-secondary text-white border-0">
-                            <!-- Preenchido via JS -->
-                        </select>
+                        <select id="selectPaginaAlvo" class="form-select bg-secondary text-white border-0"></select>
                     </div>
 
-                    <!-- Barra de Emojis Rápidos -->
                     <div class="mb-2 d-flex gap-2">
                         <button type="button" class="btn btn-sm btn-outline-secondary btn-emoji">👍</button>
                         <button type="button" class="btn btn-sm btn-outline-secondary btn-emoji">❤️</button>
@@ -71,7 +59,6 @@
                         <div id="sugestoesMentions" class="list-group position-absolute shadow w-100 d-none" style="z-index: 1050; max-height: 150px; overflow-y: auto;"></div>
                     </div>
 
-                    <!-- Input para Anexar Imagem -->
                     <div class="mb-3">
                         <label for="inputAnexo" class="form-label">Anexar Imagem (Opcional):</label>
                         <input type="file" id="inputAnexo" accept="image/*" class="form-control form-control-sm bg-secondary text-white border-0">
@@ -88,13 +75,24 @@
         </div>
     </div>
 
+    <!-- Script de retorno baseado exclusivamente no parâmetro origin -->
     <script>
-        // Utiliza o histórico do navegador se acessado via citação, ou redireciona com parâmetro de restauração
         document.getElementById('btnVoltarIncio').addEventListener('click', function(e) {
             e.preventDefault();
-            window.location.href = '../index.html?restaurar=true';
+            const urlParams = new URLSearchParams(window.location.search);
+            const zineId = urlParams.get("id");
+            const origin = urlParams.get("origin");
+
+            if (origin === "create" && zineId) {
+                // Se veio do painel de criação, volta para a edição
+                window.location.href = `../createZine/index.html?edit=${zineId}`;
+            } else {
+                // Se veio da listagem (home) ou de qualquer outro lugar, volta para a tela inicial
+                window.location.href = '../index.html';
+            }
         });
     </script>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="script.js"></script>
 </body>
