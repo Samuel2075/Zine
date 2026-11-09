@@ -46,6 +46,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     let zineIdFinal = "";
     let paginasUrls = [];
     let publicadoState = false;
+    let comentariosData = {}; // Garante o controle limpo dos comentários
 
     const urlParams = new URLSearchParams(window.location.search);
     let zineEditId = urlParams.get("edit");
@@ -68,6 +69,8 @@ document.addEventListener("DOMContentLoaded", async function () {
                 zineIdFinal = zineData.id;
                 paginasUrls = zineData.paginas || [];
                 publicadoState = zineData.publicado || false;
+                // Carrega os comentários existentes apenas se o documento já os possuir legitimamente
+                comentariosData = zineData.comentarios || {};
 
                 atualizarVisualBotoesAcao();
                 
@@ -105,6 +108,9 @@ document.addEventListener("DOMContentLoaded", async function () {
             
             const novaUrl = `${window.location.pathname}?edit=${zineIdFinal}`;
             window.history.replaceState({ path: novaUrl }, '', novaUrl);
+            
+            // Assegura que zines recém-criados comecem absolutamente sem comentários
+            comentariosData = {};
         }
 
         const zineRef = doc(db, "zines", zineIdFinal);
@@ -117,6 +123,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             templateQuantidade: templateSelect.value || "",
             paginas: paginasUrls,
             publicado: publicadoState,
+            comentarios: comentariosData, // Envia explicitamente o objeto limpo ou existente
             atualizadoEm: new Date().toISOString()
         };
 
