@@ -13,7 +13,6 @@
 
     <div class="top-bar">
         <div style="display: flex; align-items: center; gap: 10px;">
-            <!-- Botão Voltar inteligente baseado na origem -->
             <button id="btnVoltarIncio" class="btn-voltar" style="cursor: pointer;">← Voltar</button>
             <button id="btnAbrirComentario" class="btn btn-sm btn-outline-light">💬 Comentar Página</button>
         </div>
@@ -28,8 +27,6 @@
         <span class="carousel__arrow" id="prevBtn">&#10094;</span>
         <span class="carousel__arrow" id="nextBtn">&#10095;</span>
     </div>
-
-    <div id="comentarioAtualContainer" class="position-fixed bottom-0 start-50 translate-middle-x mb-5 p-3 bg-dark bg-opacity-75 text-white rounded shadow-sm small d-none" style="z-index: 5; max-width: 600px; width: 90%;"></div>
 
     <div class="modal fade" id="modalComentario" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -75,7 +72,6 @@
         </div>
     </div>
 
-    <!-- Script de retorno baseado exclusivamente no parâmetro origin -->
     <script>
         document.getElementById('btnVoltarIncio').addEventListener('click', function(e) {
             e.preventDefault();
@@ -84,10 +80,8 @@
             const origin = urlParams.get("origin");
 
             if (origin === "create" && zineId) {
-                // Se veio do painel de criação, volta para a edição
                 window.location.href = `../createZine/index.html?edit=${zineId}`;
             } else {
-                // Se veio da listagem (home) ou de qualquer outro lugar, volta para a tela inicial
                 window.location.href = '../index.html';
             }
         });

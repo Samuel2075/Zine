@@ -6,14 +6,13 @@ document.addEventListener("DOMContentLoaded", async function () {
     const zineTitleEl = document.getElementById("zineTitle");
     const prevBtn = document.getElementById("prevBtn");
     const nextBtn = document.getElementById("nextBtn");
-    
+
     const btnAbrirComentario = document.getElementById("btnAbrirComentario");
     const modalComentarioEl = document.getElementById("modalComentario");
     const modalComentario = window.bootstrap ? new bootstrap.Modal(modalComentarioEl) : null;
     const txtComentario = document.getElementById("txtComentario");
     const selectPaginaAlvo = document.getElementById("selectPaginaAlvo");
     const seletorPaginaContainer = document.getElementById("seletorPaginaContainer");
-    const comentarioAtualContainer = document.getElementById("comentarioAtualContainer");
     const sugestoesMentions = document.getElementById("sugestoesMentions");
 
     const inputAnexo = document.getElementById("inputAnexo");
@@ -45,17 +44,17 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     if (!zineId) {
         mostrarNotificacao("Zine não encontrado.", "error");
-        setTimeout(() => window.location.href = "../index.html?restaurar=true", 1500);
+        setTimeout(() => window.location.href = "../index.html", 1500);
         return;
     }
 
     let zineAtualData = null;
     let paginasUrls = [];
-    let carouselItems = [];
+    let slidesArray = [];
     let currentIndex = 0;
     let meusZinesCache = [];
+    let animando = false;
 
-    // Carregar APENAS zines do utilizador logado usando localStorage para garantir consistência
     async function carregarMeusZinesParaMention() {
         const userEmailLogado = localStorage.getItem("user_email");
         if (!userEmailLogado) return;
@@ -81,7 +80,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         if (!docSnap.exists()) {
             mostrarNotificacao("Zine não existe.", "error");
-            setTimeout(() => window.location.href = "../index.html?restaurar=true", 1500);
+            setTimeout(() => window.location.href = "../index.html", 1500);
             return;
         }
 
@@ -89,21 +88,18 @@ document.addEventListener("DOMContentLoaded", async function () {
         zineTitleEl.textContent = zineAtualData.nomeZine;
         paginasUrls = zineAtualData.paginas || [];
 
-        montarEstruturaLivro(paginasUrls);
-        atualizarExibicaoComentarioPagina(currentIndex);
+        gerarSlidesDoLivro(paginasUrls);
+        renderizarSpreadAtual();
 
     } catch (error) {
         console.error("Erro ao carregar zine para preview:", error);
         zineTitleEl.textContent = "Erro ao carregar";
     }
 
-    function montarEstruturaLivro(paginas) {
-        bookContainer.innerHTML = "";
-        carouselItems = [];
-
+    function gerarSlidesDoLivro(paginas) {
+        slidesArray = [];
         if (paginas.length === 0) return;
 
-        let slidesArray = [];
         slidesArray.push({ type: 'single', index: 0, url: paginas[0] });
 
         let i = 1;
@@ -114,10 +110,10 @@ document.addEventListener("DOMContentLoaded", async function () {
             let rightUrl = paginas[i + 1];
 
             if (rightUrl) {
-                slidesArray.push({ 
-                    type: 'double', 
-                    leftIndex: i, leftUrl: leftUrl, 
-                    rightIndex: i + 1, rightUrl: rightUrl 
+                slidesArray.push({
+                    type: 'double',
+                    leftIndex: i, leftUrl: leftUrl,
+                    rightIndex: i + 1, rightUrl: rightUrl
                 });
                 i += 2;
             } else {
@@ -129,73 +125,103 @@ document.addEventListener("DOMContentLoaded", async function () {
         if (totalPaginas > 1 && (totalPaginas - 1) >= i) {
             slidesArray.push({ type: 'single', index: totalPaginas - 1, url: paginas[totalPaginas - 1] });
         }
+    }
 
-        slidesArray.forEach((slide, idx) => {
-            const itemDiv = document.createElement("div");
-            itemDiv.className = `carousel-item ${idx === 0 ? 'active show' : ''}`;
+    function renderizarSpreadAtual() {
+        const spreadAnterior = bookContainer.querySelector(".book-spread");
+        if (spreadAnterior) spreadAnterior.remove();
 
-            if (slide.type === 'single') {
-                itemDiv.innerHTML = `
-                    <article class="singlePage" style="background-image: url('${slide.url}');">
-                        <span class="pagenumber">${slide.index + 1}</span>
-                    </article>
-                `;
-                itemDiv.dataset.indicesPaginas = JSON.stringify([slide.index]);
-            } else {
-                itemDiv.className += " carousel-item--double";
-                itemDiv.innerHTML = `
-                    <article class="leftPage" style="background-image: url('${slide.leftUrl}');">
-                        <span class="pagenumber">${slide.leftIndex + 1}</span>
-                    </article>
-                    <article class="rightPage" style="background-image: url('${slide.rightUrl}');">
-                        <span class="pagenumber">${slide.rightIndex + 1}</span>
-                    </article>
-                `;
-                itemDiv.dataset.indicesPaginas = JSON.stringify([slide.leftIndex, slide.rightIndex]);
-            }
+        const slide = slidesArray[currentIndex];
+        const spreadDiv = document.createElement("div");
+        spreadDiv.className = "book-spread";
 
-            bookContainer.appendChild(itemDiv);
-            carouselItems.push(itemDiv);
+        if (slide.type === 'single') {
+            spreadDiv.innerHTML = `
+                <article class="singlePage" style="background-image: url('${slide.url}');"></article>
+            `;
+        } else {
+            spreadDiv.innerHTML = `
+                <article class="leftPage" style="background-image: url('${slide.leftUrl}');"></article>
+                <article class="rightPage" style="background-image: url('${slide.rightUrl}');"></article>
+            `;
+        }
+
+        bookContainer.insertBefore(spreadDiv, bookContainer.firstChild);
+    }
+
+    function mudarPagina(novoIndex, direcao) {
+        if (animando || novoIndex === currentIndex || novoIndex < 0 || novoIndex >= slidesArray.length) return;
+
+        const slideAntigo = slidesArray[currentIndex];
+        const slideNovo = slidesArray[novoIndex];
+
+        const deveAnimar = (slideAntigo.type === 'double' && slideNovo.type === 'double');
+
+        if (!deveAnimar) {
+            currentIndex = novoIndex;
+            renderizarSpreadAtual();
+            return;
+        }
+
+        animando = true;
+
+        const turningPage = document.createElement("div");
+        turningPage.className = `turning-page ${direcao === 'next' ? 'right-to-left' : 'left-to-right'}`;
+
+        const faceFront = document.createElement("div");
+        faceFront.className = "page-face front";
+
+        const faceBack = document.createElement("div");
+        faceBack.className = "page-face back";
+
+        if (direcao === 'next') {
+            faceFront.style.backgroundImage = `url('${slideAntigo.rightUrl}')`;
+            faceBack.style.backgroundImage = `url('${slideNovo.leftUrl}')`;
+        } else {
+            faceFront.style.backgroundImage = `url('${slideAntigo.leftUrl}')`;
+            faceBack.style.backgroundImage = `url('${slideNovo.rightUrl}')`;
+        }
+
+        turningPage.appendChild(faceFront);
+        turningPage.appendChild(faceBack);
+        bookContainer.appendChild(turningPage);
+
+        setTimeout(() => {
+            currentIndex = novoIndex;
+            renderizarSpreadAtual();
+        }, 250);
+
+        setTimeout(() => {
+            turningPage.remove();
+            animando = false;
+        }, 500);
+    }
+
+    if (prevBtn) {
+        prevBtn.addEventListener("click", () => {
+            mudarPagina(currentIndex - 1, 'prev');
         });
     }
 
-    function mostrarSlide(index) {
-        carouselItems.forEach((item, idx) => {
-            item.classList.remove("active", "show");
-            if (idx === index) {
-                item.classList.add("active", "show");
-            }
+    if (nextBtn) {
+        nextBtn.addEventListener("click", () => {
+            mudarPagina(currentIndex + 1, 'next');
         });
-
-        const indices = JSON.parse(carouselItems[index].dataset.indicesPaginas);
-        atualizarExibicaoComentarioPagina(indices[0]);
     }
 
-    prevBtn.addEventListener("click", () => {
-        currentIndex = (currentIndex > 0) ? currentIndex - 1 : carouselItems.length - 1;
-        mostrarSlide(currentIndex);
-    });
-
-    nextBtn.addEventListener("click", () => {
-        currentIndex = (currentIndex < carouselItems.length - 1) ? currentIndex + 1 : 0;
-        mostrarSlide(currentIndex);
-    });
-
-    // Inserção de Emojis
     document.querySelectorAll(".btn-emoji").forEach(btn => {
-        btn.addEventListener("click", function() {
+        btn.addEventListener("click", function () {
             txtComentario.value += this.textContent;
             txtComentario.focus();
         });
     });
 
-    // Processar Imagem Anexada
     if (inputAnexo) {
-        inputAnexo.addEventListener("change", function(e) {
+        inputAnexo.addEventListener("change", function (e) {
             const file = e.target.files[0];
             if (file) {
                 const reader = new FileReader();
-                reader.onload = function(evt) {
+                reader.onload = function (evt) {
                     anexoBase64 = evt.target.result;
                     imgPreviewAnexo.src = anexoBase64;
                     previewAnexoContainer.classList.remove("d-none");
@@ -209,31 +235,28 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
 
     btnAbrirComentario.addEventListener("click", () => {
-        const itemAtual = carouselItems[currentIndex];
-        const indices = JSON.parse(itemAtual.dataset.indicesPaginas);
-
+        const slideAtual = slidesArray[currentIndex];
         txtComentario.value = "";
         anexoBase64 = null;
         if (inputAnexo) inputAnexo.value = "";
         if (previewAnexoContainer) previewAnexoContainer.classList.add("d-none");
         selectPaginaAlvo.innerHTML = "";
 
-        if (indices.length > 1) {
+        if (slideAtual.type === 'double') {
             seletorPaginaContainer.classList.remove("d-none");
             selectPaginaAlvo.innerHTML = `
-                <option value="${indices[0]}">Página Esquerda (Página ${indices[0] + 1})</option>
-                <option value="${indices[1]}">Página Direita (Página ${indices[1] + 1})</option>
+                <option value="${slideAtual.leftIndex}">Página Esquerda (Página ${slideAtual.leftIndex + 1})</option>
+                <option value="${slideAtual.rightIndex}">Página Direita (Página ${slideAtual.rightIndex + 1})</option>
             `;
         } else {
             seletorPaginaContainer.classList.add("d-none");
-            selectPaginaAlvo.innerHTML = `<option value="${indices[0]}">Página ${indices[0] + 1}</option>`;
+            selectPaginaAlvo.innerHTML = `<option value="${slideAtual.index}">Página ${slideAtual.index + 1}</option>`;
         }
 
         modalComentario.show();
     });
 
-    // Filtro de Autocompletar @ apenas com Meus Zines
-    txtComentario.addEventListener("input", function() {
+    txtComentario.addEventListener("input", function () {
         const val = this.value;
         const cursorPos = this.selectionStart;
         const textoAteCursor = val.substring(0, cursorPos);
@@ -268,7 +291,6 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
     });
 
-    // Salvar Comentário
     document.getElementById("btnSalvarComentario").addEventListener("click", async () => {
         const texto = txtComentario.value.trim();
         if (!texto && !anexoBase64) {
@@ -276,8 +298,9 @@ document.addEventListener("DOMContentLoaded", async function () {
             return;
         }
 
-        const paginaAlvo = selectPaginaAlvo.classList.contains("d-none") 
-            ? JSON.parse(carouselItems[currentIndex].dataset.indicesPaginas)[0] 
+        const slideAtual = slidesArray[currentIndex];
+        const paginaAlvo = selectPaginaAlvo.classList.contains("d-none")
+            ? slideAtual.index
             : parseInt(selectPaginaAlvo.value);
 
         const userEmail = localStorage.getItem("user_email");
@@ -313,36 +336,9 @@ document.addEventListener("DOMContentLoaded", async function () {
             await setDoc(zineRef, { comentarios: zineAtualData.comentarios }, { merge: true });
             modalComentario.hide();
             mostrarNotificacao("Comentário salvo com sucesso!");
-            atualizarExibicaoComentarioPagina(paginaAlvo);
         } catch (e) {
             console.error("Erro ao salvar comentário:", e);
             mostrarNotificacao("Erro ao salvar comentário.", "error");
         }
     });
-
-    function atualizarExibicaoComentarioPagina(indicePagina) {
-        if (zineAtualData && zineAtualData.comentarios && zineAtualData.comentarios[indicePagina]) {
-            const com = zineAtualData.comentarios[indicePagina];
-            comentarioAtualContainer.classList.remove("d-none");
-            
-            let linkCitacao = "";
-            if (com.zineCitadoId) {
-                // Caminho corrigido para garantir que aponta corretamente para o preview a partir da subpasta
-                linkCitacao = `<br><a href="/preview/index.html?id=${com.zineCitadoId}" target="_blank" rel="noopener noreferrer" class="text-info text-decoration-none small d-inline-flex align-items-center gap-1">🔗 Ver Zine Citado</a>`;
-            }
-
-            let anexoHtml = "";
-            if (com.anexoUrl) {
-                anexoHtml = `<div class="mt-2"><img src="${com.anexoUrl}" class="rounded border" style="max-height: 120px; object-fit: contain;"></div>`;
-            }
-
-            comentarioAtualContainer.innerHTML = `
-                <div><strong>${com.autorNickname}:</strong> ${com.texto}</div>
-                ${anexoHtml}
-                ${linkCitacao}
-            `;
-        } else {
-            comentarioAtualContainer.classList.add("d-none");
-        }
-    }
 });
