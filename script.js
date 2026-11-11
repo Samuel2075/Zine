@@ -273,8 +273,12 @@ document.addEventListener("DOMContentLoaded", function () {
                                         `;
                                     }
 
+                                    // UNICA ALTERAÇÃO REALIZADA:
+                                    // Verifica se quem está logado é o autor do comentário OU o dono do zine
+                                    const isAutorComentario = com.autorEmail === emailLogado;
+
                                     let botaoExcluir = "";
-                                    if (isDonoZine) {
+                                    if (isDonoZine || isAutorComentario) {
                                         botaoExcluir = `
                                             <button class="btn btn-sm btn-link text-danger p-0 text-decoration-none small btn-excluir-comentario" data-zineid="${zineId}" data-pag="${pagIdx}">
                                                 Excluir
