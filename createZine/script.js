@@ -51,11 +51,13 @@ document.addEventListener("DOMContentLoaded", async function () {
     const urlParams = new URLSearchParams(window.location.search);
     let zineEditId = urlParams.get("edit");
 
-    if (zineEditId) {
-        sessionStorage.setItem("current_editing_zine_id", zineEditId);
+    if (!zineEditId) {
+        sessionStorage.removeItem("current_editing_zine_id");
     } else {
-        zineEditId = sessionStorage.getItem("current_editing_zine_id");
+        sessionStorage.setItem("current_editing_zine_id", zineEditId);
     }
+
+    zineEditId = sessionStorage.getItem("current_editing_zine_id");
 
     if (zineEditId) {
         try {
