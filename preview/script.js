@@ -23,6 +23,9 @@ document.addEventListener("DOMContentLoaded", async function () {
     const urlParams = new URLSearchParams(window.location.search);
     const zineId = urlParams.get("id");
 
+    const previewLoader = document.getElementById("previewLoader");
+    const loadingProgress = document.getElementById("loadingProgress");
+
     function mostrarNotificacao(mensagem, tipo = "success") {
         const toastContainer = document.getElementById("toastContainer");
         if (!toastContainer) return;
@@ -54,6 +57,15 @@ document.addEventListener("DOMContentLoaded", async function () {
     let currentIndex = 0;
     let meusZinesCache = [];
     let animando = false;
+
+    function preloadImage(url) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.src = url;
+            img.onload = () => resolve(true);
+            img.onerror = () => resolve(false);
+        });
+    }
 
     async function carregarMeusZinesParaMention() {
         const userEmailLogado = localStorage.getItem("user_email");
@@ -88,12 +100,35 @@ document.addEventListener("DOMContentLoaded", async function () {
         zineTitleEl.textContent = zineAtualData.nomeZine;
         paginasUrls = zineAtualData.paginas || [];
 
+        if (loadingProgress) loadingProgress.textContent = `A carregar 0/${paginasUrls.length} páginas...`;
+
+        let carregadas = 0;
+        const promises = paginasUrls.map(async (url) => {
+            await preloadImage(url);
+            carregadas++;
+            if (loadingProgress) {
+                loadingProgress.textContent = `A carregar ${carregadas}/${paginasUrls.length} páginas...`;
+            }
+        });
+
+        await Promise.all(promises);
+
+        // Desbloqueia os cliques imediatamente e remove o loader da árvore do DOM
+        if (previewLoader) {
+            previewLoader.style.opacity = "0";
+            previewLoader.style.pointerEvents = "none";
+            setTimeout(() => {
+                previewLoader.remove();
+            }, 500);
+        }
+
         gerarSlidesDoLivro(paginasUrls);
         renderizarSpreadAtual();
 
     } catch (error) {
         console.error("Erro ao carregar zine para preview:", error);
         zineTitleEl.textContent = "Erro ao carregar";
+        if (previewLoader) previewLoader.remove();
     }
 
     function gerarSlidesDoLivro(paginas) {
@@ -150,7 +185,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
 
     function mudarPagina(novoIndex, direcao) {
-        // debugger
         if (animando || novoIndex === currentIndex || novoIndex < 0 || novoIndex >= slidesArray.length) return;
 
         const slideAntigo = slidesArray[currentIndex];
@@ -175,8 +209,6 @@ document.addEventListener("DOMContentLoaded", async function () {
         const faceBack = document.createElement("div");
         faceBack.className = "page-face back";
 
-        // debugger
-
         if (direcao === 'next') {
             faceFront.style.backgroundImage = `url('${slideAntigo.rightUrl}')`;
             faceFront.style.backgroundSize = "100% 100%";
@@ -195,12 +227,9 @@ document.addEventListener("DOMContentLoaded", async function () {
             faceBack.style.backgroundPosition = "right center";
         }
 
-        turningPage.appendChild(faceFront);
+    	turningPage.appendChild(faceFront);
         turningPage.appendChild(faceBack);
         bookContainer.appendChild(turningPage);
-
-        currentIndex = novoIndex;
-        // renderizarSpreadAtual();
         
         setTimeout(() => {
             currentIndex = novoIndex;

@@ -12,7 +12,13 @@
 <body>
 
     <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
-
+    <div id="previewLoader"
+        class="position-fixed top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-dark text-white"
+        style="z-index: 99999; opacity: 1; transition: opacity 0.5s ease;">
+        <div class="spinner-border text-light mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+        <h5 class="fw-semibold">A carregar páginas do Zine...</h5>
+        <p class="text-secondary small" id="loadingProgress">A preparar imagens</p>
+    </div>
     <div class="top-bar">
         <div style="display: flex; align-items: center; gap: 10px;">
             <button id="btnVoltarIncio" class="btn-voltar" style="cursor: pointer;"><svg
