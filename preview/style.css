@@ -26,9 +26,7 @@ body {
     align-items: center;
     justify-content: space-between;
     box-sizing: border-box;
-    background: rgba(12, 12, 12, 0.9);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgb(12 12 12 / 0%);
 }
 
 .btn-voltar {
@@ -89,16 +87,18 @@ article {
     position: relative;
     background-repeat: no-repeat;
     /* No desktop/geral usa auto 100% para manter a proporção da altura perfeita */
-    background-size: contain; 
+    background-size: contain;
     backface-visibility: hidden;
 }
 
 .leftPage {
-    background-position: right center; /* Mostra a metade esquerda da imagem total do spread */
+    background-position: right center;
+    /* Mostra a metade esquerda da imagem total do spread */
 }
 
 .rightPage {
-    background-position: left center;  /* Mostra a metade direita da imagem total do spread */
+    background-position: left center;
+    /* Mostra a metade direita da imagem total do spread */
 }
 
 /* Sombra suave e natural na lombada central para todas as páginas[cite: 15, 23] */
@@ -194,13 +194,23 @@ article {
 }
 
 @keyframes turnRightToLeft {
-    0% { transform: rotateY(0deg); }
-    100% { transform: rotateY(-180deg); }
+    0% {
+        transform: rotateY(0deg);
+    }
+
+    100% {
+        transform: rotateY(-180deg);
+    }
 }
 
 @keyframes turnLeftToRight {
-    0% { transform: rotateY(0deg); }
-    100% { transform: rotateY(180deg); }
+    0% {
+        transform: rotateY(0deg);
+    }
+
+    100% {
+        transform: rotateY(180deg);
+    }
 }
 
 /* Ajuste específico para telas verticais/mobile onde a proporção do livro inverte */
@@ -209,10 +219,11 @@ article {
         height: 70vh;
         width: 92vw;
     }
-    
-    article, .page-face {
+
+    article,
+    .page-face {
         /* No mobile, como o container fica mais vertical, cobrimos a largura ajustando o fundo proporcionalmente */
-        background-size: contain; 
+        background-size: contain;
     }
 
     .leftPage {
@@ -253,7 +264,7 @@ article {
     border: 1px solid rgba(255, 255, 255, 0.1);
     display: flex;
     border-radius: 8px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
 }
 
 .carousel__arrow {
