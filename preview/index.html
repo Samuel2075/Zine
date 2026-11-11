@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,14 +8,20 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
     <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
 
     <div class="top-bar">
         <div style="display: flex; align-items: center; gap: 10px;">
-            <button id="btnVoltarIncio" class="btn-voltar" style="cursor: pointer;">← Voltar</button>
-            <button id="btnAbrirComentario" class="btn btn-sm btn-outline-light">💬 Comentar Página</button>
+            <button id="btnVoltarIncio" class="btn-voltar" style="cursor: pointer;"><svg
+                    xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#ffffff" class="bi bi-arrow-left"
+                    viewBox="0 0 16 16">
+                    <path fill-rule="evenodd"
+                        d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z" />
+                </svg></button>
+            <button id="btnAbrirComentario" class="btn btn-sm btn-outline-light">💬</button>
         </div>
         <div>
             <span id="zineTitle">Carregando Zine...</span>
@@ -33,7 +40,8 @@
             <div class="modal-content bg-dark text-white">
                 <div class="modal-header border-secondary">
                     <h5 class="modal-title">Deixar Comentário na Página</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body position-relative">
                     <div id="seletorPaginaContainer" class="mb-3 d-none">
@@ -51,29 +59,35 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="txtComentario" class="form-label">Seu Comentário (digite @ para citar seus zines):</label>
-                        <textarea id="txtComentario" class="form-control bg-secondary text-white border-0" rows="3" placeholder="Escreva aqui... Use @ para mencionar um zine seu."></textarea>
-                        <div id="sugestoesMentions" class="list-group position-absolute shadow w-100 d-none" style="z-index: 1050; max-height: 150px; overflow-y: auto;"></div>
+                        <label for="txtComentario" class="form-label">Seu Comentário (digite @ para citar seus
+                            zines):</label>
+                        <textarea id="txtComentario" class="form-control bg-secondary text-white border-0" rows="3"
+                            placeholder="Escreva aqui... Use @ para mencionar um zine seu."></textarea>
+                        <div id="sugestoesMentions" class="list-group position-absolute shadow w-100 d-none"
+                            style="z-index: 1050; max-height: 150px; overflow-y: auto;"></div>
                     </div>
 
                     <div class="mb-3">
                         <label for="inputAnexo" class="form-label">Anexar Imagem (Opcional):</label>
-                        <input type="file" id="inputAnexo" accept="image/*" class="form-control form-control-sm bg-secondary text-white border-0">
+                        <input type="file" id="inputAnexo" accept="image/*"
+                            class="form-control form-control-sm bg-secondary text-white border-0">
                         <div id="previewAnexoContainer" class="mt-2 d-none">
-                            <img id="imgPreviewAnexo" src="" alt="Preview Anexo" class="img-thumbnail" style="max-height: 100px;">
+                            <img id="imgPreviewAnexo" src="" alt="Preview Anexo" class="img-thumbnail"
+                                style="max-height: 100px;">
                         </div>
                     </div>
                 </div>
                 <div class="modal-footer border-secondary">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" id="btnSalvarComentario" class="btn btn-primary btn-sm">Salvar Comentário</button>
+                    <button type="button" id="btnSalvarComentario" class="btn btn-primary btn-sm">Salvar
+                        Comentário</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        document.getElementById('btnVoltarIncio').addEventListener('click', function(e) {
+        document.getElementById('btnVoltarIncio').addEventListener('click', function (e) {
             e.preventDefault();
             const urlParams = new URLSearchParams(window.location.search);
             const zineId = urlParams.get("id");
@@ -90,4 +104,5 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="script.js"></script>
 </body>
+
 </html>

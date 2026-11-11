@@ -150,6 +150,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
 
     function mudarPagina(novoIndex, direcao) {
+        // debugger
         if (animando || novoIndex === currentIndex || novoIndex < 0 || novoIndex >= slidesArray.length) return;
 
         const slideAntigo = slidesArray[currentIndex];
@@ -174,18 +175,33 @@ document.addEventListener("DOMContentLoaded", async function () {
         const faceBack = document.createElement("div");
         faceBack.className = "page-face back";
 
+        // debugger
+
         if (direcao === 'next') {
             faceFront.style.backgroundImage = `url('${slideAntigo.rightUrl}')`;
+            faceFront.style.backgroundSize = "100% 100%";
+            faceFront.style.backgroundPosition = "right center";
+
             faceBack.style.backgroundImage = `url('${slideNovo.leftUrl}')`;
+            faceBack.style.backgroundSize = "100% 100%";
+            faceBack.style.backgroundPosition = "left center";
         } else {
             faceFront.style.backgroundImage = `url('${slideAntigo.leftUrl}')`;
+            faceFront.style.backgroundSize = "100% 100%";
+            faceFront.style.backgroundPosition = "left center";
+
             faceBack.style.backgroundImage = `url('${slideNovo.rightUrl}')`;
+            faceBack.style.backgroundSize = "100% 100%";
+            faceBack.style.backgroundPosition = "right center";
         }
 
         turningPage.appendChild(faceFront);
         turningPage.appendChild(faceBack);
         bookContainer.appendChild(turningPage);
 
+        currentIndex = novoIndex;
+        // renderizarSpreadAtual();
+        
         setTimeout(() => {
             currentIndex = novoIndex;
             renderizarSpreadAtual();

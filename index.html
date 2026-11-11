@@ -1,131 +1,84 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zine Platform</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <style>
-        body {
-            background-color: #0f0f0f;
-            color: #e0e0e0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            min-height: 100vh;
-        }
-
-        .card-custom {
-            background-color: #161616;
-            border: 1px solid #262626;
-            border-radius: 12px;
-            color: #e0e0e0;
-        }
-
-        .zine-card {
-            background-color: #161616;
-            border: 1px solid #262626;
-            border-radius: 10px;
-            overflow: hidden;
-            transition: transform 0.2s, border-color 0.2s;
-        }
-        .zine-card:hover {
-            border-color: #404040;
-            transform: translateY(-2px);
-        }
-
-        .section-title {
-            color: #ffffff;
-            border-bottom: 1px solid #262626;
-            padding-bottom: 0.5rem;
-            font-weight: 600;
-        }
-
-        .btn-dark-custom {
-            background-color: #222222;
-            border: 1px solid #333333;
-            color: #e0e0e0;
-        }
-        .btn-dark-custom:hover {
-            background-color: #2f2f2f;
-            border-color: #444444;
-            color: #ffffff;
-        }
-
-        .btn-accent {
-            background-color: #2563eb;
-            border: none;
-            color: #ffffff;
-        }
-        .btn-accent:hover {
-            background-color: #1d4ed8;
-            color: #ffffff;
-        }
-
-        .modal-content-dark {
-            background-color: #161616;
-            border: 1px solid #262626;
-            color: #e0e0e0;
-            border-radius: 12px;
-        }
-        .modal-header-dark {
-            background-color: #1f1f1f;
-            border-bottom: 1px solid #262626;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
     <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
 
-    <div class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-md-6 col-lg-5">
-                
-                <div id="loginCard" class="card card-custom shadow-lg p-4 text-center">
-                    <h3 class="mb-3 text-white fw-bold">Bem-vindo ao Zine</h3>
-                    <p class="text-secondary small mb-4">Conecte-se com sua conta Google para gerenciar seus templates e salvar seus zines.</p>
-                    <button id="btnGoogleLogin" class="btn btn-dark-custom d-flex align-items-center justify-content-center gap-2 py-2 w-100">
-                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="20">
-                        Entrar com o Google
-                    </button>
-                </div>
+    <!-- Barra Superior / Perfil Integrado (Inicia oculta com d-none) -->
+    <header class="zine-top-nav d-none" id="mainHeader">
+        <div class="container d-flex justify-content-between align-items-center py-3">
+            <div class="d-flex align-items-center gap-2">
+                <span class="fs-5 fw-bold text-white tracking-wide">✨ Zine Platform</span>
+            </div>
 
-                <div id="profileCard" class="card card-custom shadow-lg p-4 text-center d-none">
-                    <div class="mb-3">
-                        <img id="userAvatar" src="assets/imgNotFound.jpg" alt="Foto de Perfil" class="rounded-circle border border-secondary shadow-sm" width="90" height="90" style="object-fit: cover;">
-                    </div>
-                    <h4 id="userNickname" class="mb-1 text-white fw-bold"></h4>
-                    <p id="userEmail" class="text-secondary small mb-3"></p>
-                    
-                    <hr class="border-secondary opacity-25">
-                    <div class="d-grid gap-2">
-                        <a href="createZine/index.html" class="btn btn-accent py-2 fw-semibold">✨ Criar novo Zine</a>
-                        <button id="btnLogout" class="btn btn-outline-danger btn-sm py-1">Sair da Conta</button>
+            <!-- Estado de Perfil (Conectado) -->
+            <div id="profileCard" class="d-flex align-items-center gap-3">
+                <img id="userAvatar" src="assets/imgNotFound.jpg" alt="Perfil"
+                    class="rounded-circle border border-secondary" width="38" height="38" style="object-fit: cover;">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="d-none d-sm-block text-start">
+                        <h6 id="userNickname" class="mb-0 text-white fw-bold" style="font-size: 0.9rem;"></h6>
                     </div>
                 </div>
-
+                <div class="d-flex align-items-center gap-2">
+                    <a href="createZine/index.html" class="btn btn-sm btn-accent fw-semibold px-3 py-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                            class="bi bi-plus-lg text-light" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd"
+                                d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z" />
+                        </svg>
+                    </a>
+                    <button id="btnLogout" class="btn btn-sm btn-outline-danger py-1.5 px-2"
+                        title="Sair da Conta">Sair</button>
+                </div>
             </div>
         </div>
+    </header>
 
-        <div id="listaZinesSection" class="row mt-5 d-none">
+    <!-- Card Central de Login (Aparece apenas quando deslogado) -->
+    <div id="loginCard" class="container d-flex flex-column justify-content-center align-items-center" style="height: 100vh;">
+        <div class="text-center p-5 card-custom shadow-lg" style="max-width: 400px; width: 100%;">
+            <h3 class="text-white mb-3 fw-bold">✨ Zine Platform</h3>
+            <p class="text-secondary mb-4 small">Entre com a sua conta Google para criar, gerir e visualizar os seus zines.</p>
+            <button id="btnGoogleLogin" class="btn btn-dark-custom d-flex align-items-center justify-content-center gap-2 px-4 py-2 w-100 shadow-sm">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="18">
+                Entrar com o Google
+            </button>
+        </div>
+    </div>
+
+    <div class="container py-4">
+        <div id="listaZinesSection" class="row mt-4 d-none">
             <div class="col-12 mb-5">
                 <h3 class="section-title mb-4">Meus Zines</h3>
-                <div id="meusZinesContainer" class="row"></div>
+                <div id="meusZinesContainer" class="zine-mosaic-grid"></div>
             </div>
 
             <div class="col-12">
                 <h3 class="section-title mb-4">Zines Publicados (Comunidade)</h3>
-                <div id="zinesPublicadosContainer" class="row"></div>
+                <div id="zinesPublicadosContainer" class="zine-mosaic-grid"></div>
             </div>
         </div>
     </div>
 
+    <!-- Modais -->
     <div class="modal fade" id="modalConfirmacao" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content modal-content-dark">
                 <div class="modal-header border-bottom border-dark">
                     <h5 class="modal-title text-danger">Confirmar Exclusão</h5>
-                    <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-secondary">Tem certeza que deseja excluir este zine permanentemente?</div>
                 <div class="modal-footer border-top border-dark">
@@ -143,7 +96,8 @@
                     <h5 class="modal-title fw-semibold fs-5 text-light d-flex align-items-center gap-2">
                         💬 Comentários da Página
                     </h5>
-                    <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4" id="listaComentariosModalBody" style="background-color: #121212;"></div>
             </div>
@@ -153,9 +107,11 @@
     <div class="modal fade" id="modalZoomImagem" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-xl">
             <div class="modal-content bg-transparent border-0 text-end p-2">
-                <button type="button" class="btn-close btn-close-white m-2 shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close btn-close-white m-2 shadow-none" data-bs-dismiss="modal"
+                    aria-label="Close"></button>
                 <div class="modal-body text-center p-0">
-                    <img id="imgZoomPreview" src="" alt="Imagem Ampliada" class="img-fluid rounded shadow-lg" style="max-height: 85vh; object-fit: contain;">
+                    <img id="imgZoomPreview" src="" alt="Imagem Ampliada" class="img-fluid rounded shadow-lg"
+                        style="max-height: 85vh; object-fit: contain;">
                 </div>
             </div>
         </div>
@@ -164,4 +120,5 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="script.js"></script>
 </body>
+
 </html>

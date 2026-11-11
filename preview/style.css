@@ -14,6 +14,7 @@ body {
     background: transparent;
 }
 
+/* Barra superior fixa refinada */
 .top-bar {
     position: fixed;
     top: 0;
@@ -54,6 +55,7 @@ body {
     letter-spacing: 0.5px;
 }
 
+/* Palco 3D do Livro */
 section {
     position: relative;
     display: flex;
@@ -78,6 +80,7 @@ section {
     gap: 0 !important;
 }
 
+/* Páginas estáticas do fundo */
 article {
     display: block;
     overflow: hidden;
@@ -85,16 +88,42 @@ article {
     width: 50%;
     position: relative;
     background-repeat: no-repeat;
-    background-size: contain;
+    /* No desktop/geral usa auto 100% para manter a proporção da altura perfeita */
+    background-size: contain; 
     backface-visibility: hidden;
 }
 
 .leftPage {
-    background-position: right center;
+    background-position: right center; /* Mostra a metade esquerda da imagem total do spread */
 }
 
 .rightPage {
-    background-position: left center;
+    background-position: left center;  /* Mostra a metade direita da imagem total do spread */
+}
+
+/* Sombra suave e natural na lombada central para todas as páginas[cite: 15, 23] */
+.leftPage::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 25px;
+    height: 100%;
+    /* background: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.4)); */
+    pointer-events: none;
+    z-index: 2;
+}
+
+.rightPage::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 25px;
+    height: 100%;
+    /* background: linear-gradient(to left, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.4)); */
+    pointer-events: none;
+    z-index: 2;
 }
 
 .singlePage {
@@ -105,6 +134,7 @@ article {
     background-position: center;
 }
 
+/* Folha que está a virar em 3D */
 .turning-page {
     position: absolute;
     top: 0;
@@ -147,6 +177,22 @@ article {
     z-index: 1;
 }
 
+.turning-page.right-to-left .page-face.front {
+    background-position: right center;
+}
+
+.turning-page.right-to-left .page-face.back {
+    background-position: left center;
+}
+
+.turning-page.left-to-right .page-face.front {
+    background-position: left center;
+}
+
+.turning-page.left-to-right .page-face.back {
+    background-position: right center;
+}
+
 @keyframes turnRightToLeft {
     0% { transform: rotateY(0deg); }
     100% { transform: rotateY(-180deg); }
@@ -157,6 +203,44 @@ article {
     100% { transform: rotateY(180deg); }
 }
 
+/* Ajuste específico para telas verticais/mobile onde a proporção do livro inverte */
+@media (max-width: 768px) {
+    section {
+        height: 70vh;
+        width: 92vw;
+    }
+    
+    article, .page-face {
+        /* No mobile, como o container fica mais vertical, cobrimos a largura ajustando o fundo proporcionalmente */
+        background-size: contain; 
+    }
+
+    .leftPage {
+        background-position: left center;
+    }
+
+    .rightPage {
+        background-position: right center;
+    }
+
+    .turning-page.right-to-left .page-face.front {
+        background-position: left center;
+    }
+
+    .turning-page.right-to-left .page-face.back {
+        background-position: right center;
+    }
+
+    .turning-page.left-to-right .page-face.front {
+        background-position: right center;
+    }
+
+    .turning-page.left-to-right .page-face.back {
+        background-position: left center;
+    }
+}
+
+/* Navegação inferior */
 .carousel__nav {
     position: fixed;
     left: 50%;

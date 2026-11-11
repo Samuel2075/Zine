@@ -1,0 +1,293 @@
+:root {
+    --columns: 3;
+    --yellow: rgba(238, 188, 31, 1);
+    --pink: rgba(255, 82, 145, 1);
+    --blue: rgba(64, 98, 187, 1);
+    --green: rgba(6, 141, 126, 1);
+    --white: rgba(248, 255, 229, 1);
+}
+
+body {
+    background-color: #182028;
+    color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.card-custom {
+    background-color: #161616;
+    border: 1px solid #262626;
+    border-radius: 12px;
+    color: #e0e0e0;
+}
+
+.section-title {
+    color: #ffffff;
+    border-bottom: 1px solid #262626;
+    padding-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.btn-dark-custom {
+    background-color: #222222;
+    border: 1px solid #333333;
+    color: #e0e0e0;
+}
+
+.btn-dark-custom:hover {
+    background-color: #2f2f2f;
+    border-color: #444444;
+    color: #ffffff;
+}
+
+.btn-accent {
+    background-color: #2563eb;
+    border: none;
+    color: #ffffff;
+}
+
+.btn-accent:hover {
+    background-color: #1d4ed8;
+    color: #ffffff;
+}
+
+/* Grelha idêntica ao exemplo original, com margem superior ampla para afastar dos títulos */
+.zine-mosaic-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--columns), 1fr);
+    margin: 180px 40px 140px 40px;
+}
+
+.zine-mosaic-item {
+    grid-column-end: span 2;
+    position: relative;
+    width: 100%;
+    padding-bottom: 100%;
+    margin-top: -50%;
+    cursor: pointer;
+}
+
+.zine-mosaic-item:nth-child(2n) {
+    grid-column-start: 2;
+}
+
+.zine-mosaic-item::before,
+.zine-mosaic-item::after {
+    content: '';
+    position: absolute;
+    display: block;
+    width: 100%;
+    height: 100%;
+    background-size: 50% 100%, 100% 100%;
+    background-position: left, right;
+    pointer-events: none;
+}
+
+.zine-mosaic-item::before {
+    z-index: -10;
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+    -webkit-clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+    background-repeat: no-repeat;
+    background-image:
+        linear-gradient(-45deg, var(--yellow) 53.5%, var(--green) 53.5%, var(--green) 60%, var(--yellow) 60%),
+        linear-gradient(45deg, var(--yellow) 65.3%, var(--green) 65.3%, var(--green) 69.9%, var(--yellow) 69.9%);
+}
+
+.zine-mosaic-item::after {
+    clip-path: polygon(100% 50%, 50% 100%, 0 50%, 20% 50%, 50% 80%, 80% 50%);
+    -webkit-clip-path: polygon(100% 50%, 50% 100%, 0 50%, 20% 50%, 50% 80%, 80% 50%);
+    background-repeat: no-repeat;
+    background-image: linear-gradient(45deg, var(--yellow) 40%, var(--green) 40%), linear-gradient(-45deg, var(--yellow) 30%, var(--green) 30%);
+}
+
+/* Variações de cores das molduras baseadas exatamente no exemplo */
+.zine-mosaic-item:nth-child(2n)::before {
+    background-image: linear-gradient(-45deg, var(--pink) 53.5%, var(--blue) 53.5%, var(--blue) 60%, var(--pink) 60%), linear-gradient(45deg, var(--pink) 65.3%, var(--blue) 65.3%, var(--blue) 69.9%, var(--pink) 69.9%);
+}
+
+.zine-mosaic-item:nth-child(2n)::after {
+    background-image: linear-gradient(45deg, var(--pink) 40%, var(--blue) 40%), linear-gradient(-45deg, var(--pink) 30%, var(--blue) 30%);
+}
+
+.zine-mosaic-item:nth-child(5n)::before {
+    background-image: linear-gradient(-45deg, var(--green) 53.5%, var(--pink) 53.5%, var(--pink) 60%, var(--green) 60%), linear-gradient(45deg, var(--green) 65.3%, var(--pink) 65.3%, var(--pink) 69.9%, var(--green) 69.9%);
+}
+
+.zine-mosaic-item:nth-child(5n)::after {
+    background-image: linear-gradient(45deg, var(--green) 40%, var(--pink) 40%), linear-gradient(-45deg, var(--green) 30%, var(--pink) 30%);
+}
+
+.zine-mosaic-item:nth-child(7n)::before,
+.zine-mosaic-item:nth-child(7n-4)::before {
+    background-image: linear-gradient(-45deg, var(--blue) 53.5%, var(--white) 53.5%, var(--white) 60%, var(--blue) 60%), linear-gradient(45deg, var(--blue) 65.3%, var(--white) 65.3%, var(--white) 69.9%, var(--blue) 69.9%);
+}
+
+.zine-mosaic-item:nth-child(7n)::after,
+.zine-mosaic-item:nth-child(7n-4)::after {
+    background-image: linear-gradient(45deg, var(--blue) 40%, var(--white) 40%), linear-gradient(-45deg, var(--blue) 30%, var(--white) 30%);
+}
+
+.zine-mosaic-img {
+    position: absolute;
+    width: 43%;
+    height: 58%;
+    left: 50%;
+    top: 50%;
+    transform: translateX(-50%) translateY(-60%);
+    box-shadow: 5px -5px 10px rgba(0, 0, 0, 0.4);
+    object-fit: cover;
+    transition: transform 0.3s;
+    /* z-index: 2; */
+}
+
+.zine-mosaic-item:hover .zine-mosaic-img {
+    transform: translateX(-40%) translateY(-70%) rotatez(15deg);
+}
+
+/* Nome do zine posicionado logo abaixo da ponta inferior do losango, sem sobrepor */
+.zine-title-badge {
+    position: absolute;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(18, 24, 32, 0.95);
+    color: #ffffff;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    max-width: 80%;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* Tooltip customizado para as opções do Zine */
+.zine-tooltip-menu {
+    display: none;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #161616;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9);
+    z-index: 100;
+    width: 210px;
+}
+
+.zine-tooltip-menu.active {
+    display: block;
+}
+
+.modal-content-dark {
+    background-color: #161616;
+    border: 1px solid #262626;
+    color: #e0e0e0;
+    border-radius: 12px;
+}
+
+.modal-header-dark {
+    background-color: #1f1f1f;
+    border-bottom: 1px solid #262626;
+}
+
+
+
+@media (min-width: 450px) {
+    .zine-mosaic-grid {
+        margin: 170px 40px 140px 40px;
+    }
+}
+
+@media (min-width: 600px) {
+    :root {
+        --columns: 5;
+    }
+
+    .zine-mosaic-item:nth-child(2n) {
+        grid-column-start: auto;
+    }
+
+    .zine-mosaic-item:nth-child(4n-1) {
+        grid-column-start: 2;
+    }
+}
+
+@media (min-width: 900px) {
+    :root {
+        --columns: 7;
+    }
+
+    .zine-mosaic-item:nth-child(4n-1) {
+        grid-column-start: auto;
+    }
+
+    .zine-mosaic-item:nth-child(6n-2) {
+        grid-column-start: 2;
+    }
+}
+
+@media (min-width: 1200px) {
+    :root {
+        --columns: 9;
+    }
+
+    .zine-mosaic-item:nth-child(6n-2) {
+        grid-column-start: auto;
+    }
+
+    .zine-mosaic-item:nth-child(8n-3) {
+        grid-column-start: 2;
+    }
+}
+
+@media (min-width: 1500px) {
+    :root {
+        --columns: 11;
+    }
+
+    .zine-mosaic-item:nth-child(8n-3) {
+        grid-column-start: auto;
+    }
+
+    .zine-mosaic-item:nth-child(10n-4) {
+        grid-column-start: 2;
+    }
+}
+
+@media (min-width: 1800px) {
+    :root {
+        --columns: 13;
+    }
+
+    .zine-mosaic-item:nth-child(10n-4) {
+        grid-column-start: auto;
+    }
+
+    .zine-mosaic-item:nth-child(12n-5) {
+        grid-column-start: 2;
+    }
+}
+
+@media (min-width: 2100px) {
+    :root {
+        --columns: 15;
+    }
+
+    .zine-mosaic-item:nth-child(12n-5) {
+        grid-column-start: auto;
+    }
+
+    .zine-mosaic-item:nth-child(14n-6) {
+        grid-column-start: 2;
+    }
+}

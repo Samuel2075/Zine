@@ -8,10 +8,11 @@ let tokenClient = null;
 document.addEventListener("DOMContentLoaded", function () {
     const loginCard = document.getElementById("loginCard");
     const profileCard = document.getElementById("profileCard");
+    const mainHeader = document.getElementById("mainHeader");
     const btnGoogleLogin = document.getElementById("btnGoogleLogin");
     const btnLogout = document.getElementById("btnLogout");
     const listaZinesSection = document.getElementById("listaZinesSection");
-    
+
     const meusZinesContainer = document.getElementById("meusZinesContainer");
     const zinesPublicadosContainer = document.getElementById("zinesPublicadosContainer");
 
@@ -80,6 +81,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (btnLogout) {
         btnLogout.addEventListener("click", () => {
             localStorage.clear();
+            if (mainHeader) mainHeader.classList.add("d-none");
             if (profileCard) profileCard.classList.add("d-none");
             if (loginCard) loginCard.classList.remove("d-none");
             if (listaZinesSection) listaZinesSection.classList.add("d-none");
@@ -124,18 +126,20 @@ document.addEventListener("DOMContentLoaded", function () {
             atualizarInterfacePerfil();
         } else {
             localStorage.clear();
+            if (mainHeader) mainHeader.classList.add("d-none");
+            if (loginCard) loginCard.classList.remove("d-none");
         }
     }
 
     async function carregarZines(userEmailLogado) {
         if (!meusZinesContainer || !zinesPublicadosContainer) return;
 
-        meusZinesContainer.innerHTML = "<p class='text-secondary'>Carregando os seus zines...</p>";
-        zinesPublicadosContainer.innerHTML = "<p class='text-secondary'>Carregando zines publicados...</p>";
+        meusZinesContainer.innerHTML = "<p class='text-secondary m-0' style='grid-column: 1 / -1;'>Carregando os seus zines...</p>";
+        zinesPublicadosContainer.innerHTML = "<p class='text-secondary m-0' style='grid-column: 1 / -1;'>Carregando zines publicados...</p>";
 
         try {
             const querySnapshot = await getDocs(collection(db, "zines"));
-            
+
             meusZinesContainer.innerHTML = "";
             zinesPublicadosContainer.innerHTML = "";
 
@@ -143,8 +147,8 @@ document.addEventListener("DOMContentLoaded", function () {
             let countPublicos = 0;
 
             if (querySnapshot.empty) {
-                meusZinesContainer.innerHTML = "<p class='text-secondary'>Você ainda não criou nenhum zine.</p>";
-                zinesPublicadosContainer.innerHTML = "<p class='text-secondary'>Nenhum zine publicado no momento.</p>";
+                meusZinesContainer.innerHTML = "<p class='text-secondary m-0' style='grid-column: 1 / -1;'>Você ainda não criou nenhum zine.</p>";
+                zinesPublicadosContainer.innerHTML = "<p class='text-secondary m-0' style='grid-column: 1 / -1;'>Nenhum zine publicado no momento.</p>";
                 return;
             }
 
@@ -159,61 +163,67 @@ document.addEventListener("DOMContentLoaded", function () {
 
                 if (isDono) {
                     countMeus++;
-                    const colMeus = document.createElement("div");
-                    colMeus.className = "col-md-4 mb-4";
+                    const itemMeus = document.createElement("div");
+                    itemMeus.className = "zine-mosaic-item zine-container-click";
 
-                    // Badges com cores contrastantes e legíveis
-                    const badgeStatus = zine.publicado 
-                        ? '<span class="badge border mb-2 px-2 py-1" style="background-color: #15803d; color: #ffffff !important; border-color: #22c55e !important; font-size: 0.75rem; font-weight: 600;">Publicado</span>' 
-                        : '<span class="badge border mb-2 px-2 py-1" style="background-color: #374151; color: #ffffff !important; border-color: #6b7280 !important; font-size: 0.75rem; font-weight: 600;">Rascunho</span>';
-
-                    colMeus.innerHTML = `
-                        <div class="card zine-card h-100">
-                            <img src="${primeiraImagemUrl}" class="card-img-top" alt="Capa do Zine" style="height: 200px; object-fit: cover; border-bottom: 1px solid #262626;" onerror="this.src='assets/imgNotFound.jpg'">
-                            <div class="card-body d-flex flex-column justify-content-between p-3">
-                                <div>
-                                    <h5 class="card-title fw-bold text-light mb-1" style="font-size: 1.15rem;">${zine.nomeZine}</h5>
-                                    ${badgeStatus}
-                                    <p class="card-text text-secondary small mb-3">Autor: Você</p>
-                                </div>
-                                <div class="d-grid gap-2">
-                                    <a href="preview/index.html?id=${zine.id}&origin=home" class="btn btn-sm btn-dark-custom w-100">Visualizar</a>
-                                    <a href="createZine/index.html?edit=${zine.id}" class="btn btn-sm btn-dark-custom w-100">Editar / Publicar</a>
-                                    <button class="btn btn-sm btn-dark-custom w-100 btn-ver-comentarios" data-id="${zine.id}">Ver Comentários</button>
-                                    <button class="btn btn-sm btn-outline-danger w-100 btn-excluir mt-1" data-id="${zine.id}">Excluir</button>
-                                </div>
+                    itemMeus.innerHTML = `
+                        <img src="${primeiraImagemUrl}" class="zine-mosaic-img" alt="Capa" onerror="this.src='assets/imgNotFound.jpg'">
+                        <div class="zine-tooltip-menu">
+                            <div class="fw-bold text-white small mb-1 text-center text-truncate">${zine.nomeZine}</div>
+                            <div class="text-secondary text-center small mb-2 text-truncate" style="font-size: 0.75rem;">Por: ${zine.autorNickname || zine.userEmail || "Autor Desconhecido"}</div>
+                            <div class="d-grid gap-1 border-top border-dark pt-2">
+                                <a href="preview/index.html?id=${zine.id}&origin=home" class="btn btn-sm btn-dark-custom w-100 py-1" style="font-size: 0.8rem;">Visualizar</a>
+                                <a href="createZine/index.html?edit=${zine.id}" class="btn btn-sm btn-dark-custom w-100 py-1" style="font-size: 0.8rem;">Editar / Publicar</a>
+                                <button class="btn btn-sm btn-dark-custom w-100 py-1 btn-ver-comentarios" data-id="${zine.id}" style="font-size: 0.8rem;">Ver Comentários</button>
+                                <button class="btn btn-sm btn-outline-danger w-100 py-1 btn-excluir mt-1" data-id="${zine.id}" style="font-size: 0.8rem;">Excluir</button>
                             </div>
                         </div>
                     `;
-                    meusZinesContainer.appendChild(colMeus);
+                    meusZinesContainer.appendChild(itemMeus);
                 }
 
                 if (zine.publicado === true) {
                     countPublicos++;
-                    const colPub = document.createElement("div");
-                    colPub.className = "col-md-4 mb-4";
+                    const itemPub = document.createElement("div");
+                    itemPub.className = "zine-mosaic-item zine-container-click";
 
-                    colPub.innerHTML = `
-                        <div class="card zine-card h-100">
-                            <img src="${primeiraImagemUrl}" class="card-img-top" alt="Capa do Zine" style="height: 200px; object-fit: cover; border-bottom: 1px solid #262626;" onerror="this.src='assets/imgNotFound.jpg'">
-                            <div class="card-body d-flex flex-column justify-content-between p-3">
-                                <div>
-                                    <h5 class="card-title fw-bold text-light mb-1" style="font-size: 1.15rem;">${zine.nomeZine}</h5>
-                                    <p class="card-text text-secondary small mb-3">Autor: ${zine.userEmail}</p>
-                                </div>
-                                <div class="d-grid gap-2">
-                                    <a href="preview/index.html?id=${zine.id}&origin=home" class="btn btn-sm btn-accent w-100">Visualizar Zine</a>
-                                    <button class="btn btn-sm btn-dark-custom w-100 btn-ver-comentarios" data-id="${zine.id}">Ver Comentários</button>
-                                </div>
+                    itemPub.innerHTML = `
+                        <img src="${primeiraImagemUrl}" class="zine-mosaic-img" alt="Capa" onerror="this.src='assets/imgNotFound.jpg'">
+                        <div class="zine-tooltip-menu">
+                            <div class="fw-bold text-white small mb-2 text-center pb-1 border-bottom border-dark text-truncate">${zine.nomeZine}</div>
+                            <div class="d-grid gap-1">
+                                <a href="preview/index.html?id=${zine.id}&origin=home" class="btn btn-sm btn-accent w-100 py-1" style="font-size: 0.8rem;">Visualizar Zine</a>
+                                <button class="btn btn-sm btn-dark-custom w-100 py-1 btn-ver-comentarios" data-id="${zine.id}" style="font-size: 0.8rem;">Ver Comentários</button>
                             </div>
                         </div>
                     `;
-                    zinesPublicadosContainer.appendChild(colPub);
+                    zinesPublicadosContainer.appendChild(itemPub);
                 }
             });
 
-            if (countMeus === 0) meusZinesContainer.innerHTML = "<p class='text-secondary'>Você ainda não criou nenhum zine.</p>";
-            if (countPublicos === 0) zinesPublicadosContainer.innerHTML = "<p class='text-secondary'>Nenhum zine publicado no momento.</p>";
+            if (countMeus === 0) meusZinesContainer.innerHTML = "<p class='text-secondary m-0' style='grid-column: 1 / -1;'>Você ainda não criou nenhum zine.</p>";
+            if (countPublicos === 0) zinesPublicadosContainer.innerHTML = "<p class='text-secondary m-0' style='grid-column: 1 / -1;'>Nenhum zine publicado no momento.</p>";
+
+            document.querySelectorAll(".zine-container-click").forEach(container => {
+                container.addEventListener("click", function (e) {
+                    e.stopPropagation();
+                    document.querySelectorAll(".zine-tooltip-menu").forEach(menu => {
+                        if (menu !== this.querySelector(".zine-tooltip-menu")) {
+                            menu.classList.remove("active");
+                        }
+                    });
+                    const menu = this.querySelector(".zine-tooltip-menu");
+                    if (menu) menu.classList.toggle("active");
+                });
+            });
+
+            document.addEventListener("click", () => {
+                document.querySelectorAll(".zine-tooltip-menu").forEach(menu => menu.classList.remove("active"));
+            });
+
+            document.querySelectorAll(".zine-tooltip-menu").forEach(menu => {
+                menu.addEventListener("click", (e) => e.stopPropagation());
+            });
 
             document.querySelectorAll(".btn-excluir").forEach(btn => {
                 btn.addEventListener("click", function () {
@@ -223,7 +233,7 @@ document.addEventListener("DOMContentLoaded", function () {
             });
 
             document.querySelectorAll(".btn-ver-comentarios").forEach(btn => {
-                btn.addEventListener("click", async function() {
+                btn.addEventListener("click", async function () {
                     const zineId = this.getAttribute("data-id");
                     const emailLogado = localStorage.getItem("user_email");
 
@@ -247,7 +257,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                     if (com.zineCitadoId) {
                                         linkCitacao = `
                                             <div class="mt-2 pt-2 border-top border-dark">
-                                                <a href="/preview/index.html?id=${com.zineCitadoId}" target="_blank" rel="noopener noreferrer" class="text-info text-decoration-none small d-inline-flex align-items-center gap-1">
+                                                <a href="preview/index.html?id=${com.zineCitadoId}" target="_blank" rel="noopener noreferrer" class="text-info text-decoration-none small d-inline-flex align-items-center gap-1">
                                                     🔗 Ver Zine Citado
                                                 </a>
                                             </div>
@@ -258,7 +268,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                     if (com.anexoUrl) {
                                         anexoHtml = `
                                             <div class="mt-3">
-                                                <img src="${com.anexoUrl}" class="rounded border border-dark img-thumbnail img-comentario-zoom" data-img="${com.anexoUrl}" style="max-height: 130px; object-fit: cover; background-color: #0f0f0f; cursor: pointer; transition: opacity 0.2s;" title="Clique para ampliar">
+                                                <img src="${com.anexoUrl}" class="rounded border border-dark img-thumbnail img-comentario-zoom" data-img="${com.anexoUrl}" style="max-height: 130px; object-fit: cover; background-color: #0f0f0f; cursor: pointer;" title="Clique para ampliar">
                                             </div>
                                         `;
                                     }
@@ -266,7 +276,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                     let botaoExcluir = "";
                                     if (isDonoZine) {
                                         botaoExcluir = `
-                                            <button class="btn btn-sm btn-link text-danger p-0 text-decoration-none small btn-excluir-comentario" data-zineid="${zineId}" data-pag="${pagIdx}" title="Excluir comentário">
+                                            <button class="btn btn-sm btn-link text-danger p-0 text-decoration-none small btn-excluir-comentario" data-zineid="${zineId}" data-pag="${pagIdx}">
                                                 Excluir
                                             </button>
                                         `;
@@ -288,7 +298,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 }
 
                                 document.querySelectorAll(".img-comentario-zoom").forEach(imgEl => {
-                                    imgEl.addEventListener("click", function() {
+                                    imgEl.addEventListener("click", function () {
                                         const srcImg = this.getAttribute("data-img");
                                         document.getElementById("imgZoomPreview").src = srcImg;
                                         const modalZoom = new bootstrap.Modal(document.getElementById("modalZoomImagem"));
@@ -297,7 +307,7 @@ document.addEventListener("DOMContentLoaded", function () {
                                 });
 
                                 document.querySelectorAll(".btn-excluir-comentario").forEach(delBtn => {
-                                    delBtn.addEventListener("click", async function() {
+                                    delBtn.addEventListener("click", async function () {
                                         if (!confirm("Deseja realmente excluir este comentário?")) return;
 
                                         const zId = this.getAttribute("data-zineid");
@@ -337,8 +347,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
         } catch (error) {
             console.error("Erro ao carregar zines:", error);
-            meusZinesContainer.innerHTML = "<p class='text-danger'>Erro ao carregar os seus zines.</p>";
-            zinesPublicadosContainer.innerHTML = "<p class='text-danger'>Erro ao carregar zines publicados.</p>";
+            meusZinesContainer.innerHTML = "<p class='text-danger m-0' style='grid-column: 1 / -1;'>Erro ao carregar os seus zines.</p>";
+            zinesPublicadosContainer.innerHTML = "<p class='text-danger m-0' style='grid-column: 1 / -1;'>Erro ao carregar zines publicados.</p>";
         }
     }
 
@@ -367,8 +377,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function atualizarInterfacePerfil() {
-        if (loginCard && profileCard) {
+        if (loginCard && profileCard && mainHeader) {
             loginCard.classList.add("d-none");
+            mainHeader.classList.remove("d-none");
             profileCard.classList.remove("d-none");
             if (listaZinesSection) listaZinesSection.classList.remove("d-none");
 
