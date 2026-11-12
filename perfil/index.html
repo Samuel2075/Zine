@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil do Usuário - Zine Platform</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
+    <!-- Barra Superior -->
+    <header class="zine-top-nav" id="mainHeader">
+        <div class="container d-flex justify-content-between align-items-center py-3">
+            <div class="d-flex align-items-center gap-2">
+                <span class="fs-5 fw-bold text-white tracking-wide">✨ Zine Platform</span>
+            </div>
+            <div>
+                <a href="../index.html" id="btnVoltarIncio" class="btn btn-sm btn-dark-custom">Voltar ao Início</a>
+                <input type="file" id="inputBannerFile" class="d-none" accept="image/jpeg, image/png, image/webp">
+                <button id="btnAlterarBanner"
+                    class="btn btn-sm btn-dark bg-dark text-white border-secondary shadow-sm opacity-85">Alterar
+                    Banner</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Banner do Perfil (Com o avatar, nome e email integrados dentro dele) -->
+    <div id="profileBanner" class="profile-banner p-4 mb-4">
+        <div class="container position-relative" style="z-index: 2;">
+            <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-end gap-3">
+
+                <!-- Avatar com botão de alterar -->
+                <div class="position-relative">
+                    <img id="profileAvatarImg" src="../assets/imgNotFound.jpg" alt="Avatar"
+                        class="rounded-circle profile-avatar shadow-lg">
+                    <input type="file" id="inputAvatarFile" class="d-none" accept="image/jpeg, image/png, image/webp">
+                    <button id="btnAlterarAvatar"
+                        class="btn btn-sm btn-dark rounded-circle position-absolute bottom-0 end-0 border-secondary p-1 shadow"
+                        title="Alterar Foto">📷</button>
+                </div>
+
+                <!-- Nome, email e botão de alterar banner -->
+                <div class="d-flex justify-content-between align-items-end w-150 flex-grow-1">
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <h3 id="profileNickname" class="text-white fw-bold m-0 text-shadow">Nome do Usuário</h3>
+                            <button id="btnEditarNome"
+                                class="btn btn-sm btn-link text-light p-0 text-decoration-none opacity-75"
+                                title="Editar Nickname">✏️</button>
+                        </div>
+                        <span id="profileEmail" class="text-light small opacity-75">email@dominio.com</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="container pb-5">
+        <!-- Descrição / Bio -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="p-3 card-dark-custom">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="text-secondary small fw-bold">SOBRE MIM / BIO</span>
+                        <button id="btnEditarBio"
+                            class="btn btn-sm btn-link text-secondary p-0 text-decoration-none small">✏️ Editar
+                            Bio</button>
+                    </div>
+                    <p id="profileBio" class="text-light m-0" style="white-space: pre-wrap; font-size: 0.95rem;">Nenhuma
+                        descrição adicionada ainda.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Secções de Zines Publicados -->
+        <div class="row">
+            <!-- 5 Últimos Zines Publicados -->
+            <div class="col-lg-6 mb-4">
+                <div class="card card-dark-custom p-4 h-100">
+                    <h4 class="section-title mb-3 fs-5">✨ Últimos 5 Zines Publicados</h4>
+                    <div id="ultimosZinesContainer" class="d-flex flex-column gap-3">
+                        <p class="text-secondary small">A carregar...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Todos os Zines Publicados -->
+            <div class="col-lg-6 mb-4">
+                <div class="card card-dark-custom p-4 h-100">
+                    <h4 class="section-title mb-3 fs-5">📚 Todos os Zines Publicados</h4>
+                    <div id="todosZinesContainer" class="d-flex flex-column gap-3"
+                        style="max-height: 400px; overflow-y: auto;">
+                        <p class="text-secondary small">A carregar...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Personalizada para Edição (Movida para a raiz do body para evitar conflitos de foco) -->
+    <div class="modal fade" id="modalEditarPerfil" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modal-content-dark">
+                <div class="modal-header modal-header-dark px-4 py-3 border-bottom border-dark">
+                    <h5 class="modal-title fw-semibold fs-5 text-light" id="modalEditarTitulo">Editar</h5>
+                    <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4" style="background-color: #161616;">
+                    <div class="mb-3" id="containerInputModal">
+                        <!-- O input ou textarea será injetado dinamicamente aqui -->
+                    </div>
+                </div>
+                <div class="modal-footer modal-header-dark border-top border-dark px-4 py-3">
+                    <button type="button" class="btn btn-dark-custom btn-sm px-3"
+                        data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="btnSalvarEdicaoModal"
+                        class="btn btn-accent btn-sm px-4">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('btnVoltarIncio').addEventListener('click', function (e) {
+            e.preventDefault();
+            const urlParams = new URLSearchParams(window.location.search);
+            const zineId = urlParams.get("id");
+            const origin = urlParams.get("origin");
+
+            if (origin === "create" && zineId) {
+                window.location.href = `../createZine/index.html?edit=${zineId}`;
+            } else if (origin === "profile") {
+                window.location.href = '../perfil/index.html';
+            } else if (origin === "community") {
+                // Vai direto para o card exato na secção de zines publicados da comunidade
+                window.location.href = `../index.html#pub-zine-${zineId}`;
+            } else {
+                // Comportamento padrão (Meus Zines ou Home normal)
+                window.location.href = `../index.html#zine-${zineId}`;
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="script.js"></script>
+</body>
+
+</html>

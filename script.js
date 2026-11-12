@@ -164,6 +164,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (isDono) {
                     countMeus++;
                     const itemMeus = document.createElement("div");
+                    itemMeus.id = `meu-zine-${zine.id}`;
                     itemMeus.className = "zine-mosaic-item zine-container-click";
 
                     itemMeus.innerHTML = `
@@ -185,15 +186,23 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (zine.publicado === true) {
                     countPublicos++;
                     const itemPub = document.createElement("div");
+                    itemPub.id = `pub-zine-${zine.id}`; // ID exclusivo para os publicados da comunidade
                     itemPub.className = "zine-mosaic-item zine-container-click";
+
+                    const autorNome = zine.autorNickname || zine.userEmail || "Autor Desconhecido";
+                    const autorEmailVal = zine.userEmail || "";
 
                     itemPub.innerHTML = `
                         <img src="${primeiraImagemUrl}" class="zine-mosaic-img" alt="Capa" onerror="this.src='assets/imgNotFound.jpg'">
                         <div class="zine-tooltip-menu">
-                            <div class="fw-bold text-white small mb-2 text-center pb-1 border-bottom border-dark text-truncate">${zine.nomeZine}</div>
-                            <div class="d-grid gap-1">
-                                <a href="preview/index.html?id=${zine.id}&origin=home" class="btn btn-sm btn-accent w-100 py-1" style="font-size: 0.8rem;">Visualizar Zine</a>
+                            <div class="fw-bold text-white small mb-1 text-center text-truncate">${zine.nomeZine}</div>
+                            <div class="text-center mb-2 text-truncate" style="font-size: 0.75rem;">
+                                Por: <a href="perfil/index.html?email=${encodeURIComponent(autorEmailVal)}" class="text-secondary text-decoration-none fw-semibold" style="transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#6c757d'">${autorNome}</a>
+                            </div>
+                            <div class="d-grid gap-1 border-top border-dark pt-2">
+                                <a href="preview/index.html?id=${zine.id}&origin=community" class="btn btn-sm btn-accent w-100 py-1" style="font-size: 0.8rem;">Visualizar Zine</a>
                                 <button class="btn btn-sm btn-dark-custom w-100 py-1 btn-ver-comentarios" data-id="${zine.id}" style="font-size: 0.8rem;">Ver Comentários</button>
+                                <a href="perfil/index.html?email=${encodeURIComponent(autorEmailVal)}" class="btn btn-sm btn-dark-custom w-100 py-1 btn-ver-comentarios">Ver perfil</a>
                             </div>
                         </div>
                     `;
@@ -203,6 +212,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
             if (countMeus === 0) meusZinesContainer.innerHTML = "<p class='text-secondary m-0' style='grid-column: 1 / -1;'>Você ainda não criou nenhum zine.</p>";
             if (countPublicos === 0) zinesPublicadosContainer.innerHTML = "<p class='text-secondary m-0' style='grid-column: 1 / -1;'>Nenhum zine publicado no momento.</p>";
+
+            // Verifica se a URL veio com uma âncora específica para rolar a tela até ele
+            if (window.location.hash) {
+                setTimeout(() => {
+                    const rawId = window.location.hash.substring(1); // Ex: pub-zine-xyz ou zine-xyz
+                    const targetElement = document.getElementById(rawId);
+                    
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        targetElement.style.transition = "transform 0.3s ease";
+                        targetElement.style.transform = "scale(1.08)";
+                        setTimeout(() => {
+                            targetElement.style.transform = "scale(1)";
+                        }, 600);
+                    }
+                }, 300);
+            }
 
             document.querySelectorAll(".zine-container-click").forEach(container => {
                 container.addEventListener("click", function (e) {
@@ -273,8 +299,6 @@ document.addEventListener("DOMContentLoaded", function () {
                                         `;
                                     }
 
-                                    // UNICA ALTERAÇÃO REALIZADA:
-                                    // Verifica se quem está logado é o autor do comentário OU o dono do zine
                                     const isAutorComentario = com.autorEmail === emailLogado;
 
                                     let botaoExcluir = "";

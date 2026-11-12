@@ -101,8 +101,13 @@
 
             if (origin === "create" && zineId) {
                 window.location.href = `../createZine/index.html?edit=${zineId}`;
+            } else if (origin === "profile") {
+                window.location.href = '../perfil/index.html';
+            } else if (origin === "community") {
+                window.location.href = `../index.html#pub-zine-${zineId}`;
             } else {
-                window.location.href = '../index.html';
+                // Redireciona para a home adicionando a âncora com o ID exato do zine
+                window.location.href = `../index.html#zine-${zineId}`;
             }
         });
     </script>

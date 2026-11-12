@@ -38,6 +38,11 @@
                                 d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z" />
                         </svg>
                     </a>
+                    <a href="perfil/index.html" class="btn btn-sm btn-dark-custom py-1.5 px-2" title="Meu Perfil"><svg
+                            xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#ffffff"
+                            class="bi bi-person-fill" viewBox="0 0 16 16">
+                            <path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6" />
+                        </svg></a>
                     <button id="btnLogout" class="btn btn-sm btn-outline-danger py-1.5 px-2"
                         title="Sair da Conta">Sair</button>
                 </div>
@@ -46,11 +51,14 @@
     </header>
 
     <!-- Card Central de Login (Aparece apenas quando deslogado) -->
-    <div id="loginCard" class="container d-flex flex-column justify-content-center align-items-center" style="height: 100vh;">
+    <div id="loginCard" class="container d-flex flex-column justify-content-center align-items-center"
+        style="height: 100vh;">
         <div class="text-center p-5 card-custom shadow-lg" style="max-width: 400px; width: 100%;">
             <h3 class="text-white mb-3 fw-bold">✨ Zine Platform</h3>
-            <p class="text-secondary mb-4 small">Entre com a sua conta Google para criar, gerir e visualizar os seus zines.</p>
-            <button id="btnGoogleLogin" class="btn btn-dark-custom d-flex align-items-center justify-content-center gap-2 px-4 py-2 w-100 shadow-sm">
+            <p class="text-secondary mb-4 small">Entre com a sua conta Google para criar, gerir e visualizar os seus
+                zines.</p>
+            <button id="btnGoogleLogin"
+                class="btn btn-dark-custom d-flex align-items-center justify-content-center gap-2 px-4 py-2 w-100 shadow-sm">
                 <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" width="18">
                 Entrar com o Google
             </button>
